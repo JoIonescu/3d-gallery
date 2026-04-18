@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Gallery</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      overflow: hidden;
+      background: #0a0a0a;
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    canvas { display: block; width: 100vw; height: 100vh; }
+
+    /* ── Loading ── */
+    #loading {
+      position: absolute; inset: 0;
+      background: #0a0a0a;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 200;
+      transition: opacity 0.8s ease;
+    }
+    #loading.fade { opacity: 0; pointer-events: none; }
+    .loading-title { font-size: 13px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 40px; }
+    .loading-track { width: 160px; height: 1px; background: rgba(255,255,255,0.1); }
+    .loading-fill  { height: 1px; background: rgba(255,255,255,0.6); width: 0%; transition: width 0.2s ease; }
+
+    /* ── Enter screen ── */
+    #enter {
+      position: absolute; inset: 0;
+      background: #0a0a0a;
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100; cursor: pointer;
+    }
+    #enter.show { display: flex; }
+    .enter-eyebrow { font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 20px; }
+    .enter-title   { font-size: 42px; font-weight: 200; letter-spacing: 0.12em; color: #fff; margin-bottom: 8px; }
+    .enter-sub     { font-size: 12px; font-weight: 300; letter-spacing: 0.12em; color: rgba(255,255,255,0.35); margin-bottom: 56px; }
+    .enter-btn {
+      font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+      padding: 14px 36px; color: rgba(255,255,255,0.7);
+      border: 0.5px solid rgba(255,255,255,0.3);
+      transition: all 0.2s; cursor: pointer; background: none;
+    }
+    .enter-btn:hover { border-color: rgba(255,255,255,0.8); color: #fff; }
+    .enter-hint { margin-top: 20px; font-size: 10px; letter-spacing: 0.1em; color: rgba(255,255,255,0.2); }
+
+    /* ── Crosshair ── */
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px; height: 18px; pointer-events: none;
+      display: none;
+    }
+    #crosshair.show { display: block; }
+    #crosshair::before, #crosshair::after {
+      content: ''; position: absolute; background: rgba(255,255,255,0.65);
+    }
+    #crosshair::before { width: 1px; height: 100%; left: 50%; transform: translateX(-50%); }
+    #crosshair::after  { height: 1px; width: 100%; top: 50%;  transform: translateY(-50%); }
+
+    /* ── Room label ── */
+    #room-label {
+      position: absolute; top: 28px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+
+    /* ── Audio button ── */
+    #audio-btn {
+      position: absolute; top: 24px; right: 24px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(0,0,0,0.4); border: 0.5px solid rgba(255,255,255,0.15);
+      cursor: pointer; display: none;
+      align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.5); font-size: 15px;
+      transition: all 0.15s; user-select: none;
+    }
+    #audio-btn.show { display: flex; }
+    #audio-btn:hover { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.9); }
+    #audio-btn.muted { color: rgba(255,255,255,0.2); }
+
+    /* ── Keyboard hint ── */
+    #hint {
+      position: absolute; bottom: 24px; right: 24px;
+      font-size: 10px; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.2); text-align: right; line-height: 2;
+      pointer-events: none;
+    }
+    @media (pointer: coarse) { #hint { display: none; } }
+
+    /* ── Navigation arrows (touch non-joystick) ── */
+    #nav-arrows {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: none;
+      grid-template-columns: repeat(3, 52px);
+      grid-template-rows: repeat(2, 52px);
+      gap: 5px;
+    }
+    @media (pointer: coarse) { #nav-arrows { display: grid; } }
+
+    .nav-btn {
+      width: 52px; height: 52px;
+      background: rgba(0,0,0,0.5); border: 0.5px solid rgba(255,255,255,0.18);
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; touch-action: none;
+      color: rgba(255,255,255,0.6); font-size: 20px;
+      transition: background 0.1s; -webkit-tap-highlight-color: transparent;
+    }
+    .nav-btn.pressed, .nav-btn:active { background: rgba(255,255,255,0.15); }
+    [data-dir="fwd"]   { grid-column: 2; grid-row: 1; }
+    [data-dir="left"]  { grid-column: 1; grid-row: 2; }
+    [data-dir="back"]  { grid-column: 2; grid-row: 2; }
+    [data-dir="right"] { grid-column: 3; grid-row: 2; }
+
+    /* ── Mobile joystick ── */
+    #joystick-zone {
+      position: absolute; bottom: 30px; left: 30px;
+      width: 110px; height: 110px;
+      display: none;
+    }
+    @media (pointer: coarse) {
+      #joystick-zone { display: block; }
+      #nav-arrows { display: none; }
+    }
+
+    /* ── Info card ── */
+    #info-card {
+      position: absolute; right: 28px;
+      top: 50%; transform: translateY(-50%) translateX(24px);
+      width: 290px;
+      background: rgba(8,8,8,0.88);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      padding: 28px 28px 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    #info-card.visible {
+      opacity: 1; pointer-events: auto;
+      transform: translateY(-50%) translateX(0);
+    }
+    .ic-label    { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 14px; }
+    .ic-title    { font-size: 19px; font-weight: 300; line-height: 1.25; color: #fff; margin-bottom: 4px; }
+    .ic-year     { font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 18px; }
+    .ic-divider  { height: 0.5px; background: rgba(255,255,255,0.1); margin-bottom: 16px; }
+    .ic-meta     { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.9; margin-bottom: 16px; }
+    .ic-desc     { font-size: 13px; color: rgba(255,255,255,0.72); line-height: 1.75; margin-bottom: 24px; }
+    .ic-actions  { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ic-btn.ar { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.75); width: 100%; text-align: center; }
+    .ic-btn {
+      font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 10px 16px; border: 0.5px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.6); background: none; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .ic-btn:hover { border-color: rgba(255,255,255,0.55); color: #fff; }
+    .ic-btn.primary { background: rgba(255,255,255,0.08); }
+
+    /* ── Zoom overlay ── */
+    #zoom-hint {
+      position: absolute; top: 28px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3); pointer-events: none;
+      display: none;
+    }
+    #zoom-hint.show { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div id="loading">
+    <div class="loading-title">Gallery</div>
+    <div class="loading-track"><div class="loading-fill" id="loading-fill"></div></div>
+  </div>
+
+  <div id="enter">
+    <div class="enter-eyebrow">Contemporary Exhibition</div>
+    <div class="enter-title">Gallery</div>
+    <div class="enter-sub">Four rooms · Ten works</div>
+    <button class="enter-btn" id="enter-btn">Enter</button>
+    <div class="enter-hint">Click and drag to look around</div>
+  </div>
+
+  <div id="crosshair"></div>
+  <div id="room-label"></div>
+
+  <div id="audio-btn" title="Toggle music">♫</div>
+
+  <div id="info-card">
+    <div class="ic-label">Artwork</div>
+    <div class="ic-title" id="ic-title"></div>
+    <div class="ic-year"  id="ic-year"></div>
+    <div class="ic-divider"></div>
+    <div class="ic-meta"  id="ic-meta"></div>
+    <div class="ic-desc"  id="ic-desc"></div>
+    <div class="ic-actions">
+      <button class="ic-btn primary" id="ic-zoom">View detail</button>
+      <button class="ic-btn"         id="ic-close">Close</button>
+      <button class="ic-btn ar"      id="ic-ar">View in your space</button>
+    </div>
+  </div>
+
+  <div id="zoom-hint">ESC — return to gallery</div>
+
+  <div id="hint">
+    WASD &nbsp; Move<br>
+    Mouse &nbsp; Look<br>
+    Approach a painting for info
+  </div>
+
+  <div id="nav-arrows">
+    <div class="nav-btn" data-dir="fwd">↑</div>
+    <div class="nav-btn" data-dir="left">←</div>
+    <div class="nav-btn" data-dir="back">↓</div>
+    <div class="nav-btn" data-dir="right">→</div>
+  </div>
+
+  <div id="joystick-zone"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
