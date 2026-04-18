@@ -6,8 +6,10 @@ export const paintingObjects = [];
 // ── Texture generators ──────────────────────────────────────────────────────
 
 function makeMarbleTexture() {
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const size = isMobile ? 256 : 512;
   const c = document.createElement('canvas');
-  c.width = 512; c.height = 512;
+  c.width = size; c.height = size;
   const ctx = c.getContext('2d');
 
   // Base: cool white-grey marble
@@ -310,8 +312,9 @@ function buildPainting(scene, painting, mat) {
     canvas.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });
   }, undefined, () => {});
 
-  // Spotlight
-  const spot = new THREE.SpotLight(0xfff5e0, 5, 8, Math.PI / 9, 0.35, 1.8);
+  // Spotlight — shadows only on desktop
+  const isMobile = window.matchMedia('(pointer: coarse)').matches;
+  const spot = new THREE.SpotLight(0xfff5e0, isMobile ? 3 : 5, 8, Math.PI / 9, 0.35, 1.8);
   const fwd  = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(0, rotY, 0));
   const lPos = new THREE.Vector3(...pos).add(fwd.clone().multiplyScalar(0.4)).add(new THREE.Vector3(0, 1.2, 0));
   spot.position.copy(lPos);
@@ -319,8 +322,8 @@ function buildPainting(scene, painting, mat) {
   target.position.set(...pos);
   scene.add(target);
   spot.target = target;
-  spot.castShadow = true;
-  spot.shadow.mapSize.set(512, 512);
+  spot.castShadow = !isMobile;
+  if (!isMobile) spot.shadow.mapSize.set(512, 512);
   scene.add(spot);
   scene.add(group);
 

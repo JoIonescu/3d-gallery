@@ -29,16 +29,12 @@ export class InfoCard {
       }
     });
 
-    // Show AR button only on mobile
+    // Always show AR button — desktop shows "open on phone" message, mobile launches AR
     if (this.arBtn) {
-      if (isMobile()) {
-        this.arBtn.style.display = 'block';
-        this.arBtn.addEventListener('click', () => {
-          if (this.current) openAR(this.current);
-        });
-      } else {
-        this.arBtn.style.display = 'none';
-      }
+      this.arBtn.style.display = 'block';
+      this.arBtn.addEventListener('click', () => {
+        if (this.current) openAR(this.current);
+      });
     }
   }
 
