@@ -102,6 +102,8 @@ function enterGallery() {
   enterEl.classList.remove('show');
   enterEl.style.display = 'none';
   audioBtn.classList.add('show');
+  galleryActive = true;
+  lastTime = performance.now();
   audio.start();
 
   if (!introPlayed) {
@@ -136,10 +138,13 @@ function updateRoomLabel(x, z) {
 }
 
 // ── Render loop ───────────────────────────────────────────────────────────────
-let lastTime = performance.now();
+let lastTime  = performance.now();
+let galleryActive = false;
 
 function animate(now) {
   requestAnimationFrame(animate);
+  if (!galleryActive) return;
+
   const dt = Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
