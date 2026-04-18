@@ -8,6 +8,7 @@ export const DOOR_W  = 3.4;   // doorway width
 export const DOOR_H  = 3.0;   // doorway height
 export const HANG_H  = 2.25;  // painting center Y
 export const PLAYER_SPEED = 5.0;
+export const PLAYER_START = { x: 0, y: 1.7, z: 17 }; // inside entrance corridor
 export const PROXIMITY_DIST = 3.8;
 
 // Museum rooms
@@ -17,28 +18,33 @@ export const ROOMS = [
   {
     id: 0, name: 'Central Hall',
     cx: 0, cz: 0, w: 20, d: 20,
-    solidWalls: ['south'],
-    doorWalls:  ['north', 'east', 'west'],
+    solidWalls: [],
+    doorWalls:  ['north', 'east', 'west', 'south'],
   },
   {
     id: 1, name: 'North Gallery',
     cx: 0, cz: -18, w: 16, d: 16,
     solidWalls: ['north', 'east', 'west'],
-    doorWalls:  [],   // south wall omitted – shared with Central Hall north wall
+    doorWalls:  [],
   },
   {
     id: 2, name: 'East Gallery',
     cx: 18, cz: 0, w: 16, d: 14,
     solidWalls: ['east', 'north', 'south'],
-    doorWalls:  [],   // west wall omitted – shared with Central Hall east wall
+    doorWalls:  [],
   },
   {
     id: 3, name: 'West Gallery',
     cx: -18, cz: 0, w: 16, d: 14,
     solidWalls: ['west', 'north', 'south'],
-    doorWalls:  [],   // east wall omitted – shared with Central Hall west wall
+    doorWalls:  [],
   },
 ];
+
+// Entrance corridor — built separately in corridor.js
+export const CORRIDOR = {
+  cx: 0, cz: 14, w: 3.6, d: 8,
+};
 
 // Collision zones for player movement (axis-aligned rectangles in XZ)
 export const MOVE_ZONES = [
@@ -50,6 +56,8 @@ export const MOVE_ZONES = [
   { xMin: -1.6,  xMax:  1.6,  zMin: -10.5, zMax: -9.5   }, // C ↔ North
   { xMin:  9.5,  xMax:  10.5, zMin: -1.6,  zMax:  1.6   }, // C ↔ East
   { xMin: -10.5, xMax: -9.5,  zMin: -1.6,  zMax:  1.6   }, // C ↔ West
+  { xMin: -1.6,  xMax:  1.6,  zMin:  9.5,  zMax: 10.5   }, // C ↔ Corridor
+  { xMin: -1.6,  xMax:  1.6,  zMin: 10.4,  zMax: 18.2   }, // Entrance corridor
 ];
 
 // Room bounding boxes for label detection
@@ -58,6 +66,7 @@ export const ROOM_ZONES = [
   { id: 1, name: 'North Gallery',  xMin:-8,  xMax:8,   zMin:-26, zMax:-10 },
   { id: 2, name: 'East Gallery',   xMin:10,  xMax:26,  zMin:-7,  zMax:7   },
   { id: 3, name: 'West Gallery',   xMin:-26, xMax:-10, zMin:-7,  zMax:7   },
+  { id: 4, name: '',               xMin:-2,  xMax:2,   zMin:10,  zMax:19  },
 ];
 
 // ─────────────────────────────────────────────

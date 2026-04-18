@@ -7,6 +7,7 @@ export class Player {
     this.camera = camera;
 
     // Movement state
+    this.locked = false; // true during intro animation
     this.keys    = { fwd: false, back: false, left: false, right: false };
     this.joystick = { x: 0, y: 0 };
     this.velocity = new THREE.Vector3();
@@ -181,6 +182,7 @@ export class Player {
   // ── Update ────────────────────────────────────────────────────────────────
 
   update(dt) {
+    if (this.locked) return;
     if (this.isZoomed) {
       this._updateZoom(dt);
       return;
