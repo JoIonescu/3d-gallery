@@ -244,20 +244,40 @@ function buildWallSection(length, mat, withDoor = false) {
     }
   }
 
-  // Dado rail
-  const rail = new THREE.Mesh(new THREE.BoxGeometry(length, DADO_RAIL, 0.06), mat.dado_rail);
-  rail.position.set(0, DADO_H + DADO_RAIL / 2, 0.03);
-  g.add(rail);
+  if (!withDoor) {
+    // Full-length dado rail, skirting, crown on solid walls
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(length, DADO_RAIL, 0.06), mat.dado_rail);
+    rail.position.set(0, DADO_H + DADO_RAIL / 2, 0.03);
+    g.add(rail);
 
-  // Skirting board
-  const skirt = new THREE.Mesh(new THREE.BoxGeometry(length, 0.12, 0.05), mat.skirting);
-  skirt.position.set(0, 0.06, 0.025);
-  g.add(skirt);
+    const skirt = new THREE.Mesh(new THREE.BoxGeometry(length, 0.12, 0.05), mat.skirting);
+    skirt.position.set(0, 0.06, 0.025);
+    g.add(skirt);
 
-  // Crown molding
-  const crown = new THREE.Mesh(new THREE.BoxGeometry(length, CROWN_H, 0.07), mat.molding);
-  crown.position.set(0, WALL_H - CROWN_H / 2, 0.035);
-  g.add(crown);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(length, CROWN_H, 0.07), mat.molding);
+    crown.position.set(0, WALL_H - CROWN_H / 2, 0.035);
+    g.add(crown);
+  } else {
+    // Door walls — rails and moldings only on side panels, not across door opening
+    const lW = (length - DOOR_W) / 2;
+    if (lW > 0.01) {
+      for (const side of [-1, 1]) {
+        const sx = side * (DOOR_W / 2 + lW / 2);
+
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(lW, DADO_RAIL, 0.06), mat.dado_rail);
+        rail.position.set(sx, DADO_H + DADO_RAIL / 2, 0.03);
+        g.add(rail);
+
+        const skirt = new THREE.Mesh(new THREE.BoxGeometry(lW, 0.12, 0.05), mat.skirting);
+        skirt.position.set(sx, 0.06, 0.025);
+        g.add(skirt);
+
+        const crown = new THREE.Mesh(new THREE.BoxGeometry(lW, CROWN_H, 0.07), mat.molding);
+        crown.position.set(sx, WALL_H - CROWN_H / 2, 0.035);
+        g.add(crown);
+      }
+    }
+  }
 
   return g;
 }
@@ -265,6 +285,64 @@ function buildWallSection(length, mat, withDoor = false) {
 function placeWall(scene, group, px, pz, rotY) {
   group.position.set(px, 0, pz);
   group.rotation.y = rotY;
+  scene.add(group);
+}
+
+// ── Museum bench ─────────────────────────────────────────────────────────────
+// Realistic low bench: dark steel legs, warm oak seat, no backrest (museum style)
+
+function buildBench(scene, x, z, rotY = 0) {
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  group.rotation.y = rotY;
+
+  const seatMat = new THREE.MeshStandardMaterial({ color: 0x8b6340, roughness: 0.55, metalness: 0.0  });
+  const legMat  = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3,  metalness: 0.7  });
+
+  const BL = 1.6;  // bench length
+  const BW = 0.38; // bench width
+  const SH = 0.44; // seat height
+  const ST = 0.06; // seat thickness
+
+  // Seat
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(BL, ST, BW), seatMat);
+  seat.position.set(0, SH, 0);
+  seat.castShadow = true;
+  seat.receiveShadow = true;
+  group.add(seat);
+
+  // Seat edge bevel strips (top face trim)
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x7a5530, roughness: 0.45 });
+  for (const [tx, tw] of [[-BL/2 + 0.015, 0.03], [BL/2 - 0.015, 0.03]]) {
+    const trim = new THREE.Mesh(new THREE.BoxGeometry(0.03, ST + 0.004, BW), trimMat);
+    trim.position.set(tx, SH, 0);
+    group.add(trim);
+  }
+
+  // Four legs — rectangular steel profile
+  const LW = 0.04, LH = SH - ST / 2, LD = 0.04;
+  const legPositions = [
+    [ BL/2 - 0.12,  BW/2 - 0.06],
+    [ BL/2 - 0.12, -BW/2 + 0.06],
+    [-BL/2 + 0.12,  BW/2 - 0.06],
+    [-BL/2 + 0.12, -BW/2 + 0.06],
+  ];
+  for (const [lx, lz] of legPositions) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(LW, LH, LD), legMat);
+    leg.position.set(lx, LH / 2, lz);
+    leg.castShadow = true;
+    group.add(leg);
+  }
+
+  // Cross stretcher — connects legs for rigidity, looks realistic
+  const stretcherH = 0.1;
+  const stretcherL = BL - 0.24;
+  for (const sz of [BW/2 - 0.06, -BW/2 + 0.06]) {
+    const s = new THREE.Mesh(new THREE.BoxGeometry(stretcherL, 0.025, 0.025), legMat);
+    s.position.set(0, stretcherH, sz);
+    group.add(s);
+  }
+
   scene.add(group);
 }
 
@@ -308,6 +386,19 @@ function buildRoom(scene, room, mat) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(t.w, 0.04, t.d), trimMat);
     mesh.position.set(t.x, WALL_H - 0.02, t.z);
     scene.add(mesh);
+  }
+
+  // Benches — one in centre of each gallery room, facing paintings
+  if (room.id === 0) {
+    // Central Hall — two benches back to back in centre
+    buildBench(scene, cx,     cz, 0);
+    buildBench(scene, cx,     cz, Math.PI);
+  } else if (room.id === 1) {
+    buildBench(scene, cx, cz + 3, 0);
+  } else if (room.id === 2) {
+    buildBench(scene, cx - 3, cz, Math.PI / 2);
+  } else if (room.id === 3) {
+    buildBench(scene, cx + 3, cz, -Math.PI / 2);
   }
 
   const wallDefs = {
@@ -389,7 +480,7 @@ function addCeilingSpots(scene, cx, cz, w, d, mat) {
 
 function getPaintingTransform(room, wall, offset) {
   const { cx, cz, w, d } = room;
-  const GAP = 0.055;
+  const GAP = 0.12;
   switch (wall) {
     case 'south': return { pos: [cx + offset, HANG_H, cz + d/2 - GAP], rotY: Math.PI };
     case 'north': return { pos: [cx + offset, HANG_H, cz - d/2 + GAP], rotY: 0 };

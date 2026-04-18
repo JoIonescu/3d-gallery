@@ -87,13 +87,12 @@ function _solidWall(scene, length, mat, px, pz, rotY) {
 }
 
 function _doorWall(scene, length, mat, px, pz, rotY) {
-  // Full height opening — no top panel, avoids z-fighting with ceiling
-  const lW = (length - DOOR_W) / 2;
-
+  const lW  = (length - DOOR_W) / 2;
   const group = new THREE.Group();
   group.position.set(px, 0, pz);
   group.rotation.y = rotY;
 
+  // Side panels only — no top panel at all, full height opening
   if (lW > 0.01) {
     const left = new THREE.Mesh(new THREE.PlaneGeometry(lW, WALL_H), mat);
     left.position.set(-(DOOR_W / 2 + lW / 2), WALL_H / 2, 0);
@@ -104,18 +103,18 @@ function _doorWall(scene, length, mat, px, pz, rotY) {
     group.add(right);
   }
 
-  // Side tunnel panels only — no top panel
+  // Side tunnel depth panels — stop 0.05 short of ceiling to avoid z-fight
   const DEPTH = 0.3;
-  const tunnelMat = mat.clone();
+  const safeH = WALL_H - 0.08;
 
-  const leftT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, WALL_H), tunnelMat);
+  const leftT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, safeH), mat.clone());
   leftT.rotation.y = Math.PI / 2;
-  leftT.position.set(-DOOR_W / 2, WALL_H / 2, -DEPTH / 2);
+  leftT.position.set(-DOOR_W / 2, safeH / 2, -DEPTH / 2);
   group.add(leftT);
 
-  const rightT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, WALL_H), tunnelMat);
+  const rightT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, safeH), mat.clone());
   rightT.rotation.y = -Math.PI / 2;
-  rightT.position.set(DOOR_W / 2, WALL_H / 2, -DEPTH / 2);
+  rightT.position.set(DOOR_W / 2, safeH / 2, -DEPTH / 2);
   group.add(rightT);
 
   scene.add(group);
