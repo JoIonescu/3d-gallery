@@ -43,8 +43,10 @@
       display: none; flex-direction: column;
       align-items: center; justify-content: center;
       z-index: 100;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       background: #080706;
+      -webkit-overflow-scrolling: touch;
     }
     #enter.show { display: flex; }
 
@@ -65,7 +67,7 @@
       display: flex; flex-direction: column;
       align-items: center; text-align: center;
       width: 100%; max-width: 560px;
-      padding: 0 40px;
+      padding: 48px 32px 64px;
     }
     .enter-logo {
       width: 120px; height: 120px; object-fit: contain;
@@ -294,6 +296,15 @@
       white-space: nowrap; display: none;
     }
     #toast.show { display: block; }
+
+    @media (max-height: 750px) {
+      .enter-logo { width: 72px; height: 72px; margin-bottom: 20px; }
+      .enter-eyebrow { margin-bottom: 10px; }
+      .enter-name { font-size: 40px; margin-bottom: 4px; }
+      .enter-sub { margin-bottom: 18px; }
+      .enter-rule { margin-bottom: 18px; }
+      .enter-bio { font-size: 12px; margin-bottom: 32px; }
+    }
   </style>
 </head>
 <body>
