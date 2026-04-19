@@ -64,43 +64,36 @@ export async function openAR(painting) {
     showDesktopARMessage();
     return;
   }
+  // AR requires pre-generated .usdz (iOS) or hosted .glb (Android) files
+  // These will be generated when real paintings are ready for deployment
+  // For now show a coming soon message
+  showToast('AR viewing coming soon with the full exhibition');
+}
 
-  if (isIOS()) {
-    // iOS AR Quick Look requires a .usdz file served from a real URL
-    // Best approach: link to a pre-generated .usdz in /public/ar/
-    // If it doesn't exist yet, show a friendly message
-    const usdzPath = `/ar/${painting.id}.usdz`;
-    const anchor   = document.createElement('a');
-    anchor.setAttribute('rel', 'ar');
-    anchor.href = usdzPath;
-
-    // AR Quick Look is triggered by clicking an <a rel="ar"> with a child <img>
-    const img = document.createElement('img');
-    img.src   = painting.image;
-    img.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none';
-    anchor.appendChild(img);
-    document.body.appendChild(anchor);
-    anchor.click();
-    setTimeout(() => document.body.removeChild(anchor), 500);
-
-  } else if (isAndroid()) {
-    // Android Scene Viewer — needs a publicly accessible .glb URL
-    // For local dev, we generate it on the fly
-    try {
-      showARLoading(true);
-      const blob   = await buildPaintingGLB(painting);
-      const url    = URL.createObjectURL(blob);
-      const intent = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(url)}&mode=ar_preferred&title=${encodeURIComponent(painting.title)}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
-      window.location.href = intent;
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch (e) {
-      alert('AR is not available on this device or browser.');
-    } finally {
-      showARLoading(false);
-    }
-  } else {
-    alert('AR is available on iOS Safari and Android Chrome.');
+function showToast(msg) {
+  let el = document.getElementById('ar-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ar-toast';
+    el.style.cssText = [
+      'position:fixed', 'bottom:120px', 'left:50%',
+      'transform:translateX(-50%)',
+      'background:rgba(10,10,10,0.92)',
+      'border:0.5px solid rgba(255,255,255,0.15)',
+      'color:rgba(255,255,255,0.8)',
+      'font-size:12px', 'letter-spacing:0.08em',
+      'padding:13px 22px', 'z-index:999',
+      'pointer-events:none',
+      'opacity:0', 'transition:opacity 0.4s ease',
+      'white-space:nowrap', 'text-align:center',
+      'max-width:280px', 'line-height:1.5',
+    ].join(';');
+    document.body.appendChild(el);
   }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 3500);
 }
 
 function showDesktopARMessage() {

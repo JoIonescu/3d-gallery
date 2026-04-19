@@ -107,8 +107,8 @@ export class Player {
       });
       manager.on('move', (_, data) => {
         if (!data.vector) return;
-        this.joystick.x =  data.vector.x;
-        this.joystick.y = -data.vector.y;
+        this.joystick.x = data.vector.x;   // turn camera left/right
+        this.joystick.y = -data.vector.y;  // move forward/back
       });
       manager.on('end', () => { this.joystick.x = 0; this.joystick.y = 0; });
     }
@@ -196,15 +196,21 @@ export class Player {
     // Resolve movement input
     const kx = (this.keys.right ? 1 : 0) - (this.keys.left  ? 1 : 0);
     const kz = (this.keys.fwd   ? 1 : 0) - (this.keys.back  ? 1 : 0);
-    const jx = this.joystick.x;
-    const jz = -this.joystick.y;  // nipple forward = negative
-    const mx = kx + jx;
+    const jz = this.joystick.y; // forward/back from joystick Y
+
+    // Joystick X rotates the camera (turn left/right)
+    if (Math.abs(this.joystick.x) > 0.05) {
+      this.euler.setFromQuaternion(this.camera.quaternion);
+      this.euler.y -= this.joystick.x * 1.8 * dt;
+      this.camera.quaternion.setFromEuler(this.euler);
+    }
+
+    const mx = kx; // keyboard only for strafe
     const mz = kz + jz;
 
     if (Math.abs(mx) > 0.01 || Math.abs(mz) > 0.01) {
       const speed = PLAYER_SPEED * Math.min(Math.hypot(mx, mz), 1);
 
-      // Forward direction from camera (flat, no Y component)
       this.camera.getWorldDirection(this.moveDir);
       this.moveDir.y = 0;
       this.moveDir.normalize();
@@ -214,7 +220,6 @@ export class Player {
       const desiredX = this.camera.position.x + (this.moveDir.x * mz + right.x * mx) * speed * dt;
       const desiredZ = this.camera.position.z + (this.moveDir.z * mz + right.z * mx) * speed * dt;
 
-      // Slide collision: try full move, then axis-only
       if (this._canMoveTo(desiredX, desiredZ)) {
         this.camera.position.x = desiredX;
         this.camera.position.z = desiredZ;

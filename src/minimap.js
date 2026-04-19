@@ -35,7 +35,10 @@ export class Minimap {
     this._buildStatic();
   }
 
-  show() { this.canvas.style.display = 'block'; }
+  show() {
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+    this.canvas.style.display = 'block';
+  }
   hide() { this.canvas.style.display = 'none'; }
 
   _buildStatic() {
