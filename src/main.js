@@ -40,7 +40,11 @@ loadingFill.style.width = '100%';
 // ── Modules ───────────────────────────────────────────────────────────────────
 const player   = new Player(camera);
 const infoCard = new InfoCard(player);
-window.__exitZoom = () => player.exitZoom();
+window.__exitZoom = () => {
+  player.exitZoom();
+  const btn = document.getElementById('zoom-exit-mobile');
+  if (btn) btn.classList.remove('show');
+};
 const audio    = new AudioManager();
 const minimap  = new Minimap();
 
@@ -109,6 +113,7 @@ function enterGallery() {
   lastTime = performance.now();
   audio.start();
   minimap.show();
+  document.getElementById('joystick-zone').classList.add('active');
 
   if (!introPlayed) {
     introPlayed = true;

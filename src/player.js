@@ -162,6 +162,8 @@ export class Player {
     this.zoomOriginQuat.copy(this.camera.quaternion);
     document.getElementById('info-card').classList.remove('visible');
     document.getElementById('zoom-hint').classList.add('show');
+    const mBtn = document.getElementById('zoom-exit-mobile');
+    if (mBtn) mBtn.classList.add('show');
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
@@ -173,6 +175,8 @@ export class Player {
     this.zoomReturnPos  = this.camera.position.clone();
     this.zoomReturnQuat = this.camera.quaternion.clone();
     document.getElementById('zoom-hint').classList.remove('show');
+    const mBtnOut = document.getElementById('zoom-exit-mobile');
+    if (mBtnOut) mBtnOut.classList.remove('show');
   }
 
   // ── Collision ─────────────────────────────────────────────────────────────
@@ -196,16 +200,12 @@ export class Player {
     // Resolve movement input
     const kx = (this.keys.right ? 1 : 0) - (this.keys.left  ? 1 : 0);
     const kz = (this.keys.fwd   ? 1 : 0) - (this.keys.back  ? 1 : 0);
-    const jz = this.joystick.y; // forward/back from joystick Y
 
-    // Joystick X rotates the camera (turn left/right)
-    if (Math.abs(this.joystick.x) > 0.05) {
-      this.euler.setFromQuaternion(this.camera.quaternion);
-      this.euler.y -= this.joystick.x * 1.8 * dt;
-      this.camera.quaternion.setFromEuler(this.euler);
-    }
+    // Joystick: X=strafe left/right, Y=forward/back (up=forward)
+    const jx =  this.joystick.x;
+    const jz = -this.joystick.y; // nipple up = positive y = move forward
 
-    const mx = kx; // keyboard only for strafe
+    const mx = kx + jx;
     const mz = kz + jz;
 
     if (Math.abs(mx) > 0.01 || Math.abs(mz) > 0.01) {

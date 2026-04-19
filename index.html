@@ -209,12 +209,12 @@
 
     /* ── Joystick ── */
     #joystick-zone {
-      position: absolute; bottom: 30px; left: 30px;
+      position: absolute; bottom: 30px; right: 30px;
       width: 110px; height: 110px; display: none;
     }
     @media (pointer: coarse) {
-      #joystick-zone  { display: block; }
-      #nav-arrows     { display: none; }
+      #joystick-zone.active  { display: block; }
+      #nav-arrows            { display: none; }
     }
 
     /* ── Info card ── */
@@ -304,6 +304,11 @@
       .enter-rule { margin-bottom: 18px; }
       .enter-bio { font-size: 12px; margin-bottom: 32px; }
     }
+
+    @media (pointer: coarse) {
+      #zoom-hint { display: none !important; }
+      #zoom-exit-mobile.show { display: block !important; }
+    }
   </style>
 </head>
 <body>
@@ -357,7 +362,23 @@
     </div>
   </div>
 
-  <div id="zoom-hint" style="cursor:pointer;" onclick="window.__exitZoom && window.__exitZoom()">ESC or click — return to gallery</div>
+  <div id="zoom-hint" style="cursor:pointer;" onclick="window.__exitZoom && window.__exitZoom()">ESC — return to gallery</div>
+  <button id="zoom-exit-mobile" onclick="window.__exitZoom && window.__exitZoom()" style="
+    display:none;
+    position:fixed;
+    top:24px;
+    left:24px;
+    z-index:60;
+    background:rgba(0,0,0,0.6);
+    border:0.5px solid rgba(255,255,255,0.2);
+    border-radius:8px;
+    color:rgba(255,255,255,0.8);
+    font-family:Inter,sans-serif;
+    font-size:11px;
+    letter-spacing:0.12em;
+    padding:10px 16px;
+    cursor:pointer;
+  ">✕ Return</button>
   <div id="toast"></div>
 
   <div id="hint">

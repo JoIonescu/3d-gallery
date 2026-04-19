@@ -35,9 +35,19 @@ export class AudioManager {
       this._play(this.current + 1);
     });
 
+    audio.disableRemotePlayback = true;
     audio.play().catch(e => {
       console.warn('Audio play failed:', e);
     });
+
+    // Prevent OS lock screen media player
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+      navigator.mediaSession.setActionHandler('nexttrack', null);
+    }
 
     document.getElementById('audio-btn').textContent = this.muted ? '♪' : '♫';
   }
