@@ -19,7 +19,7 @@ export const ROOMS = [
     id: 0, name: 'Central Hall',
     cx: 0, cz: 0, w: 20, d: 20,
     solidWalls: [],
-    doorWalls:  ['north', 'east', 'west', 'south'],
+    doorWalls:  ['north', 'east', 'west'],  // south omitted — corridor wall at same Z
   },
   {
     id: 1, name: 'North Gallery',
@@ -77,6 +77,7 @@ export const ROOM_ZONES = [
 //  wall:  'north' | 'south' | 'east' | 'west'
 //  offset: position along wall from its centre (metres)
 //  size:   { w, h } in world units
+//  enquire: optional email or URL for 'Enquire' button. Leave as '' to hide.
 //
 //  ── HOW TO MATCH FRAME TO PAINTING ──────────
 //  The frame size MUST match the painting's real aspect ratio.
@@ -105,7 +106,8 @@ export const PAINTINGS = [
     description: 'A meditative exploration of early light — the quiet moment before the day begins. Replace this text with your own statement.',
     image: '/paintings/01.jpg',
     color: '#c8a882',
-    room: 0, wall: 'south', offset: -4.5, size: { w: 2.2, h: 1.7 },
+    room: 3, wall: 'south', offset: 2.5, size: { w: 2.2, h: 1.7 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 1,
@@ -116,7 +118,8 @@ export const PAINTINGS = [
     description: 'The threshold between light and dark, held still. Replace this text with your own statement.',
     image: '/paintings/02.jpg',
     color: '#7a9fb5',
-    room: 0, wall: 'south', offset: 4.5, size: { w: 1.9, h: 1.9 },
+    room: 2, wall: 'north', offset: -2.5, size: { w: 1.9, h: 1.9 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 2,
@@ -128,6 +131,7 @@ export const PAINTINGS = [
     image: '/paintings/03.jpg',
     color: '#6b7c5a',
     room: 0, wall: 'west', offset: -5, size: { w: 2.1, h: 1.6 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 3,
@@ -139,6 +143,7 @@ export const PAINTINGS = [
     image: '/paintings/04.jpg',
     color: '#b5896e',
     room: 1, wall: 'north', offset: -3.5, size: { w: 2.4, h: 1.8 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 4,
@@ -150,6 +155,7 @@ export const PAINTINGS = [
     image: '/paintings/05.jpg',
     color: '#8faa8c',
     room: 1, wall: 'north', offset: 3.5, size: { w: 1.5, h: 2.1 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 5,
@@ -161,6 +167,7 @@ export const PAINTINGS = [
     image: '/paintings/06.jpg',
     color: '#555',
     room: 1, wall: 'east', offset: -2, size: { w: 1.5, h: 2.0 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 6,
@@ -172,6 +179,7 @@ export const PAINTINGS = [
     image: '/paintings/07.jpg',
     color: '#d4a853',
     room: 2, wall: 'east', offset: -2, size: { w: 2.6, h: 1.9 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 7,
@@ -183,6 +191,7 @@ export const PAINTINGS = [
     image: '/paintings/08.jpg',
     color: '#c97a7a',
     room: 2, wall: 'south', offset: 2, size: { w: 1.8, h: 2.3 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 8,
@@ -194,6 +203,7 @@ export const PAINTINGS = [
     image: '/paintings/09.jpg',
     color: '#7a7ac9',
     room: 3, wall: 'west', offset: -2, size: { w: 2.1, h: 1.4 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
   {
     id: 9,
@@ -205,5 +215,6 @@ export const PAINTINGS = [
     image: '/paintings/10.jpg',
     color: '#2a2a2a',
     room: 3, wall: 'north', offset: 0, size: { w: 1.7, h: 2.3 },
+    enquire: 'mailto:hanna@imagohanna.com',
   },
 ];

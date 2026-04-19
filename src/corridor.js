@@ -27,16 +27,18 @@ export function buildCorridor(scene) {
   });
 
   // Floor
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d - 0.05), floorMat);
+  const floorLen = d - 1.2;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, floorLen), floorMat);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(cx, 0.001, cz + 0.025);
+  floor.position.set(cx, 0.001, cz + 0.6);
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Ceiling — slightly inset to avoid z-fighting at door wall junction
-  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(w, d - 0.05), ceilMat);
+  // Ceiling — stops well short of north doorway to avoid any z-fighting
+  const ceilLen = d - 1.2;
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(w, ceilLen), ceilMat);
   ceil.rotation.x = Math.PI / 2;
-  ceil.position.set(cx, WALL_H - 0.001, cz + 0.025);
+  ceil.position.set(cx, WALL_H - 0.001, cz + 0.6);
   scene.add(ceil);
 
   // South wall (solid — entrance back wall with small opening for entry)
@@ -53,29 +55,9 @@ export function buildCorridor(scene) {
 
   // ── Lighting ──────────────────────────────────────────────────────────────
 
-  // Very dim ambient — corridor should feel dark
-  const ambient = new THREE.PointLight(0x1a1510, 0.4, 12, 2);
-  ambient.position.set(cx, WALL_H - 0.5, cz);
-  scene.add(ambient);
+  // No corridor lights — the gallery's ambient light bleeds in naturally
 
-  // Warm light strip at north end — glows through the doorway
-  const strip = new THREE.PointLight(0xfff5e0, 3.5, 6, 1.8);
-  strip.position.set(cx, WALL_H - 0.3, cz - d / 2 + 0.5);
-  scene.add(strip);
-
-  // Subtle floor wash at the entrance threshold
-  const threshold = new THREE.SpotLight(0xfff0d0, 2.0, 5, Math.PI / 5, 0.5, 2);
-  threshold.position.set(cx, WALL_H - 0.1, cz - d / 2 + 0.3);
-  const tgt = new THREE.Object3D();
-  tgt.position.set(cx, 0, cz - d / 2 + 1);
-  scene.add(tgt);
-  threshold.target = tgt;
-  scene.add(threshold);
-
-  // Single overhead strip light — very dim, cool white, runs along centre
-  const overhead = new THREE.RectAreaLight
-    ? _rectLight(scene, cx, cz)
-    : _dimOverhead(scene, cx, cz);
+  // No overhead light — darkness is intentional, gallery light ahead guides the visitor
 }
 
 function _solidWall(scene, length, mat, px, pz, rotY) {

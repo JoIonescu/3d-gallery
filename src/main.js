@@ -5,6 +5,7 @@ import { Player }               from './player.js';
 import { InfoCard, findNearest } from './infoCard.js';
 import { AudioManager }         from './audio.js';
 import { ROOM_ZONES, PLAYER_START } from './config.js';
+import { Minimap } from './minimap.js';
 
 // ── Renderer ─────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('canvas');
@@ -40,6 +41,7 @@ loadingFill.style.width = '100%';
 const player   = new Player(camera);
 const infoCard = new InfoCard(player);
 const audio    = new AudioManager();
+const minimap  = new Minimap();
 
 // ── iOS Safari AR tooltip ─────────────────────────────────────────────────────
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
@@ -105,6 +107,7 @@ function enterGallery() {
   galleryActive = true;
   lastTime = performance.now();
   audio.start();
+  minimap.show();
 
   if (!introPlayed) {
     introPlayed = true;
@@ -154,6 +157,8 @@ function animate(now) {
     infoCard.update(nearest, dt);
     updateRoomLabel(camera.position.x, camera.position.z);
   }
+
+  minimap.update(camera);
 
   // Eye adaptation — darker in corridor, brighter in gallery
   const inCorridor = camera.position.z > 10;
