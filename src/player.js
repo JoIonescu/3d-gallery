@@ -154,9 +154,10 @@ export class Player {
   // ── Zoom ──────────────────────────────────────────────────────────────────
 
   zoomTo(pos, lookAt) {
-    this.isZoomed = true;
-    this.zoomProgress = 0;
-    this.zoomTarget = { pos: pos.clone(), lookAt: lookAt.clone() };
+    this.isZoomed      = true;
+    this.zoomProgress  = 0;
+    this.zoomPhase     = 'in';   // 'in' | 'out'
+    this.zoomTarget    = { pos: pos.clone(), lookAt: lookAt.clone() };
     this.zoomOriginPos.copy(this.camera.position);
     this.zoomOriginQuat.copy(this.camera.quaternion);
     document.getElementById('info-card').classList.remove('visible');
@@ -165,8 +166,12 @@ export class Player {
   }
 
   exitZoom() {
-    this.isZoomed = false;
-    this.zoomTarget = null;
+    if (!this.isZoomed) return;
+    // Animate back out instead of snapping
+    this.zoomPhase    = 'out';
+    this.zoomProgress = 0;
+    this.zoomReturnPos  = this.camera.position.clone();
+    this.zoomReturnQuat = this.camera.quaternion.clone();
     document.getElementById('zoom-hint').classList.remove('show');
   }
 
@@ -222,21 +227,63 @@ export class Player {
   }
 
   _updateZoom(dt) {
-    if (!this.zoomTarget) return;
-    this.zoomProgress = Math.min(1, this.zoomProgress + dt * 1.6);
-    const t = smoothStep(this.zoomProgress);
+    if (this.zoomPhase === 'in') {
+      if (!this.zoomTarget) return;
+      this.zoomProgress = Math.min(1, this.zoomProgress + dt * 0.85);
+      const t = cubicEaseInOut(this.zoomProgress);
 
-    this.camera.position.lerpVectors(this.zoomOriginPos, this.zoomTarget.pos, t);
+      this.camera.position.lerpVectors(this.zoomOriginPos, this.zoomTarget.pos, t);
 
-    // Smoothly look at painting
-    const lookQuat = new THREE.Quaternion();
-    const m = new THREE.Matrix4();
-    m.lookAt(this.zoomTarget.pos, this.zoomTarget.lookAt, new THREE.Vector3(0, 1, 0));
-    lookQuat.setFromRotationMatrix(m);
-    this.camera.quaternion.slerp(lookQuat, t);
+
+
+      // Look at painting centre
+      const lookQuat = new THREE.Quaternion();
+      const m = new THREE.Matrix4();
+      m.lookAt(
+        this.zoomTarget.pos,
+        this.zoomTarget.lookAt,
+        new THREE.Vector3(0, 1, 0)
+      );
+      lookQuat.setFromRotationMatrix(m);
+      this.camera.quaternion.slerp(lookQuat, Math.min(1, t * 1.4));
+
+    } else if (this.zoomPhase === 'out') {
+      this.zoomProgress = Math.min(1, this.zoomProgress + dt * 0.85);
+      const t = cubicEaseInOut(this.zoomProgress);
+
+      this.camera.position.lerpVectors(this.zoomReturnPos, this.zoomOriginPos, t);
+      this.camera.quaternion.slerp(this.zoomOriginQuat, t);
+
+
+
+      if (this.zoomProgress >= 1) {
+
+        this.isZoomed   = false;
+        this.zoomPhase  = null;
+        this.zoomTarget = null;
+        document.documentElement.requestPointerLock().catch(() => {});
+      }
+    }
   }
 }
 
-function smoothStep(t) {
-  return t * t * (3 - 2 * t);
+function _setVignette(alpha) {
+  let el = document.getElementById('zoom-vignette');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'zoom-vignette';
+    el.style.cssText = [
+      'position:fixed', 'inset:0',
+      'background:rgba(0,0,0,0)',
+      'pointer-events:none',
+      'z-index:49',
+      'transition:background 0.1s',
+    ].join(';');
+    document.body.appendChild(el);
+  }
+  el.style.background = `rgba(0,0,0,${alpha.toFixed(3)})`;
+}
+
+function cubicEaseInOut(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }

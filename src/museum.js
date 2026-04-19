@@ -549,7 +549,7 @@ function buildPainting(scene, painting, mat) {
   scene.add(group);
 
   const viewDir = fwd.clone();
-  const viewPos = new THREE.Vector3(...pos).add(viewDir.clone().multiplyScalar(2.4));
+  const viewPos = new THREE.Vector3(...pos).add(viewDir.clone().multiplyScalar(1.6));
   viewPos.y = 1.7;
   paintingObjects.push({ mesh: group, painting, viewPos, viewTarget: new THREE.Vector3(...pos) });
 }

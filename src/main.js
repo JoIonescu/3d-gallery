@@ -40,6 +40,7 @@ loadingFill.style.width = '100%';
 // ── Modules ───────────────────────────────────────────────────────────────────
 const player   = new Player(camera);
 const infoCard = new InfoCard(player);
+window.__exitZoom = () => player.exitZoom();
 const audio    = new AudioManager();
 const minimap  = new Minimap();
 
