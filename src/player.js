@@ -99,14 +99,13 @@ export class Player {
   _initMobileJoystick() {
     if (!window.matchMedia('(pointer: coarse)').matches) return;
 
-    // Dynamic joystick — appears wherever you touch the left 50% of screen
     const zone = document.getElementById('joystick-zone');
     const manager = nipplejs.create({
       zone: zone,
-      mode: 'dynamic',
-      size: 90,
-      color: 'rgba(255,255,255,0.35)',
-      restOpacity: 0,
+      mode: 'static',
+      position: { right: '55px', bottom: '55px' },
+      size: 96,
+      color: 'rgba(255,255,255,0.28)',
     });
     manager.on('move', (_, data) => {
       if (!data.vector) return;
@@ -125,7 +124,7 @@ export class Player {
 
     canvas.addEventListener('touchstart', (e) => {
       for (const t of e.changedTouches) {
-        if (t.clientX < window.innerWidth * 0.5) {
+        if (t.clientX < window.innerWidth * 0.65) {
           lastTouch = { id: t.identifier, x: t.clientX, y: t.clientY };
         }
       }

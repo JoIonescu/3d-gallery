@@ -85,9 +85,9 @@ export async function openAR(painting) {
     return;
   }
 
-  // Open model-viewer page — works on both iOS Safari and Android Chrome
+  // Navigate directly — window.open gets blocked on mobile
   const viewerUrl = `/ar-viewer.html?model=${encodeURIComponent(glbUrl)}&title=${encodeURIComponent(painting.title)}`;
-  window.open(viewerUrl, '_blank');
+  window.location.href = viewerUrl;
 }
 
 function showToast(msg) {

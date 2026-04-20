@@ -9,13 +9,14 @@ import { Minimap } from './minimap.js';
 
 // ── Renderer ─────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('canvas');
-const isMobile = window.matchMedia('(pointer: coarse)').matches;
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile });
+const isMobile  = window.matchMedia('(pointer: coarse)').matches;
+const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*A[0-9]|Moto/i.test(navigator.userAgent));
+const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: isMobile ? 'low-power' : 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 2));
-renderer.shadowMap.enabled = !isMobile;
-renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
-renderer.toneMapping       = THREE.ACESFilmicToneMapping;
+renderer.setPixelRatio(isLowEnd ? 0.75 : isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled   = false;
+renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+renderer.toneMapping         = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 window.addEventListener('resize', () => {
