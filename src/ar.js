@@ -65,29 +65,29 @@ export async function openAR(painting) {
     return;
   }
 
-  const id      = String(painting.id + 1).padStart(2, '0');
-  const glbUrl  = `${window.location.origin}/ar/${id}.glb`;
-
-  if (isIOS()) {
-    // iOS needs .usdz — not generated yet, show message
-    if (isSafari()) {
-      showToast('iOS AR coming soon with the full exhibition');
-    } else {
-      showToast('Open in Safari to use AR');
-    }
+  if (isIOS() && !isSafari()) {
+    showToast('Open in Safari to use AR');
     return;
   }
 
-  if (isAndroid()) {
-    // Check if .glb exists first
+  const id     = String(painting.id + 1).padStart(2, '0');
+  const glbUrl = `${window.location.origin}/ar/${id}.glb`;
+
+  // Check if .glb exists
+  try {
     const check = await fetch(glbUrl, { method: 'HEAD' });
     if (!check.ok) {
       showToast('AR not available for this painting yet');
       return;
     }
-    const intent = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(painting.title)}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
-    window.location.href = intent;
+  } catch(e) {
+    showToast('AR not available for this painting yet');
+    return;
   }
+
+  // Open model-viewer page — works on both iOS Safari and Android Chrome
+  const viewerUrl = `/ar-viewer.html?model=${encodeURIComponent(glbUrl)}&title=${encodeURIComponent(painting.title)}`;
+  window.open(viewerUrl, '_blank');
 }
 
 function showToast(msg) {
