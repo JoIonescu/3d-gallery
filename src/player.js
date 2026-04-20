@@ -100,11 +100,15 @@ export class Player {
     if (!window.matchMedia('(pointer: coarse)').matches) return;
 
     const zone = document.getElementById('joystick-zone');
+    if (!zone) return;
+
+    // Calculate left/top from zone size - nipplejs only supports left/top
+    const size = 96;
     const manager = nipplejs.create({
       zone: zone,
       mode: 'static',
-      position: { right: '55px', bottom: '55px' },
-      size: 96,
+      position: { left: '50%', top: '50%' },
+      size: size,
       color: 'rgba(255,255,255,0.28)',
     });
     manager.on('move', (_, data) => {
