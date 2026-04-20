@@ -209,7 +209,7 @@
 
     /* ── Joystick ── */
     #joystick-zone {
-      position: absolute; left: 0; bottom: 0;
+      position: absolute; right: 0; bottom: 0;
       width: 50%; height: 60%;
       display: none;
       z-index: 20;
@@ -272,6 +272,7 @@
         margin: 0 auto 18px;
       }
       #info-card.visible { transform: translateY(0); }
+
     }
 
     /* ── Zoom hint ── */
@@ -362,7 +363,7 @@
   <div id="crosshair"></div>
   <div id="room-label"></div>
   <div id="audio-btn" title="Toggle music">♫</div>
-  <div id="gallery-brand" style="position:absolute;bottom:20px;left:24px;display:none;flex-direction:column;align-items:flex-start;gap:10px;z-index:10;">
+  <div id="gallery-brand" style="position:absolute;bottom:20px;left:24px;display:none;flex-direction:column;align-items:flex-start;gap:10px;z-index:10;transition:opacity 0.3s ease;">
     <img src="/logo.png" alt="Hanna" style="width:56px;height:56px;object-fit:contain;opacity:0.65;" onerror="this.style.display='none'" />
     <a href="https://www.instagram.com/imagohanna" target="_blank" style="font-size:10px;letter-spacing:0.15em;color:rgba(255,255,255,0.32);text-decoration:none;transition:color 0.2s;display:block;" onmouseover="this.style.color='#FBD00E'" onmouseout="this.style.color='rgba(255,255,255,0.32)'">@imagohanna</a>
   </div>

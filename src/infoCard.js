@@ -103,11 +103,15 @@ export class InfoCard {
     }
 
     this.card.classList.add('visible');
+    const brand = document.getElementById('gallery-brand');
+    if (brand) brand.style.opacity = '0';
   }
 
   hide() {
     this.current = null;
     this.card.classList.remove('visible');
+    const brand = document.getElementById('gallery-brand');
+    if (brand) brand.style.opacity = '';
   }
 }
 

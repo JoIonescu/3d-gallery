@@ -125,7 +125,7 @@ export class Player {
 
     canvas.addEventListener('touchstart', (e) => {
       for (const t of e.changedTouches) {
-        if (t.clientX > window.innerWidth * 0.4) {
+        if (t.clientX < window.innerWidth * 0.5) {
           lastTouch = { id: t.identifier, x: t.clientX, y: t.clientY };
         }
       }
