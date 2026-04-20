@@ -64,10 +64,30 @@ export async function openAR(painting) {
     showDesktopARMessage();
     return;
   }
-  // AR requires pre-generated .usdz (iOS) or hosted .glb (Android) files
-  // These will be generated when real paintings are ready for deployment
-  // For now show a coming soon message
-  showToast('AR viewing coming soon with the full exhibition');
+
+  const id      = String(painting.id + 1).padStart(2, '0');
+  const glbUrl  = `${window.location.origin}/ar/${id}.glb`;
+
+  if (isIOS()) {
+    // iOS needs .usdz — not generated yet, show message
+    if (isSafari()) {
+      showToast('iOS AR coming soon with the full exhibition');
+    } else {
+      showToast('Open in Safari to use AR');
+    }
+    return;
+  }
+
+  if (isAndroid()) {
+    // Check if .glb exists first
+    const check = await fetch(glbUrl, { method: 'HEAD' });
+    if (!check.ok) {
+      showToast('AR not available for this painting yet');
+      return;
+    }
+    const intent = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_preferred&title=${encodeURIComponent(painting.title)}#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;end;`;
+    window.location.href = intent;
+  }
 }
 
 function showToast(msg) {
