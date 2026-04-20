@@ -127,7 +127,7 @@ export const PAINTINGS = [
     title: 'Rooted Voice',
     year: '2026',
     medium: 'Mixed media on paper (watercolor pencils, markers, and fineliners)',
-    dimensions: '90 × 100 cm',
+    dimensions: '110 × 90 cm',
     description: 'A surreal, organic form blending plant and body, exploring inner voice, growth, and transformation through vivid color and layered detail.',
     image: '/paintings/03.jpg',
     color: '#6b7c5a',

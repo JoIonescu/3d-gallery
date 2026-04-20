@@ -526,6 +526,23 @@ function buildPainting(scene, painting, mat) {
   new THREE.TextureLoader().load(painting.image, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     canvas.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
+
+    // Auto-resize frame to match real image aspect ratio
+    const iw = tex.image.naturalWidth  || tex.image.width  || 0;
+    const ih = tex.image.naturalHeight || tex.image.height || 0;
+    if (iw > 0 && ih > 0) {
+      const targetH = painting.size.h;
+      const autoW   = targetH * (iw / ih);
+
+      canvas.geometry.dispose();
+      canvas.geometry = new THREE.PlaneGeometry(autoW, targetH);
+
+      frameOuter.geometry.dispose();
+      frameOuter.geometry = new THREE.BoxGeometry(autoW + 0.16, targetH + 0.16, 0.07);
+
+      frameInner.geometry.dispose();
+      frameInner.geometry = new THREE.BoxGeometry(autoW + 0.04, targetH + 0.04, 0.09);
+    }
   }, undefined, () => {});
 
   // Spotlight on painting — warm, focused
