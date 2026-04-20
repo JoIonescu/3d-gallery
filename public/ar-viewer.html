@@ -4,80 +4,107 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>View in your space — Hanna</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0a; font-family: -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; }
-
-    model-viewer {
-      width: 100%;
-      flex: 1;
-      background-color: #0a0a0a;
-      --poster-color: #0a0a0a;
+    body {
+      background: #0a0a0a;
+      font-family: -apple-system, sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-
     #header {
-      padding: 16px 20px;
-      background: rgba(0,0,0,0.8);
+      padding: 14px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 0.5px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
     }
-    #title {
+    #painting-title {
       font-size: 13px;
-      letter-spacing: 0.12em;
-      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.65);
     }
     #back {
-      font-size: 11px;
-      letter-spacing: 0.15em;
+      font-size: 11px; letter-spacing: 0.15em;
       text-transform: uppercase;
-      color: #FBD00E;
-      text-decoration: none;
-      cursor: pointer;
-      background: none;
-      border: none;
+      color: #FBD00E; background: none;
+      border: none; cursor: pointer;
+    }
+    model-viewer {
+      width: 100%;
+      flex: 1;
+      background-color: #111;
+      --poster-color: #111;
     }
     #hint {
       text-align: center;
-      padding: 12px;
+      padding: 14px;
       font-size: 11px;
       letter-spacing: 0.08em;
       color: rgba(255,255,255,0.3);
-      background: rgba(0,0,0,0.6);
+      flex-shrink: 0;
+    }
+    /* Style the built-in AR button */
+    model-viewer::part(default-ar-button) {
+      bottom: 60px;
+      right: 16px;
+      background: #FBD00E;
+      border-radius: 8px;
+      color: #000;
     }
   </style>
 </head>
 <body>
   <div id="header">
-    <span id="title">Loading...</span>
-    <button id="back" onclick="window.close()">✕ Close</button>
+    <span id="painting-title">Loading…</span>
+    <button id="back" onclick="history.back()">✕ Close</button>
   </div>
 
   <model-viewer
     id="viewer"
     ar
     ar-modes="webxr scene-viewer quick-look"
+    ar-scale="fixed"
     camera-controls
+    touch-action="pan-y"
     auto-rotate
-    shadow-intensity="1"
-    exposure="1"
-    ar-button-label="Place in your room"
+    auto-rotate-delay="1000"
+    rotation-per-second="10deg"
+    shadow-intensity="0.8"
+    exposure="1.1"
+    environment-image="neutral"
   ></model-viewer>
 
-  <div id="hint">Tap the AR button to place this work in your space</div>
+  <div id="hint">Rotate to inspect · Tap AR to place in your room</div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const model  = params.get('model');
     const title  = params.get('title') || 'Artwork';
 
-    document.getElementById('title').textContent = title;
+    document.getElementById('painting-title').textContent = title;
 
     const viewer = document.getElementById('viewer');
-    viewer.setAttribute('src', model);
-    viewer.setAttribute('alt', title);
+    viewer.src = model;
+    viewer.alt = title;
+
+    // Once loaded, frame the painting properly
+    viewer.addEventListener('load', () => {
+      // Camera looks straight at the painting face
+      viewer.cameraOrbit = '0deg 90deg auto';
+      viewer.fieldOfView = 'auto';
+    });
+
+    // AR not available message
+    viewer.addEventListener('ar-status', (e) => {
+      if (e.detail.status === 'failed') {
+        alert('AR is not supported on this device or browser. Try Chrome on Android or Safari on iOS 15+.');
+      }
+    });
   </script>
 </body>
 </html>
