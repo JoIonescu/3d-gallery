@@ -114,6 +114,20 @@ function enterGallery() {
   audio.start();
   minimap.show();
   document.getElementById('joystick-zone').classList.add('active');
+  // Show movement hint on mobile, fade after 4s or first movement
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    const hint = document.getElementById('move-hint');
+    if (hint) {
+      setTimeout(() => hint.classList.add('show'), 800);
+      const fadeHint = () => {
+        hint.classList.remove('show');
+        hint.classList.add('fade');
+        window.removeEventListener('touchmove', fadeHint);
+      };
+      setTimeout(fadeHint, 5000);
+      window.addEventListener('touchmove', fadeHint, { once: true });
+    }
+  }
 
   if (!introPlayed) {
     introPlayed = true;

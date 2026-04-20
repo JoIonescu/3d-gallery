@@ -97,21 +97,23 @@ export class Player {
   // ── Mobile joystick ───────────────────────────────────────────────────────
 
   _initMobileJoystick() {
-    if (window.matchMedia('(pointer: coarse)').matches) {
-      const manager = nipplejs.create({
-        zone: document.getElementById('joystick-zone'),
-        mode: 'static',
-        position: { left: '55px', top: '55px' },
-        size: 100,
-        color: 'rgba(255,255,255,0.3)',
-      });
-      manager.on('move', (_, data) => {
-        if (!data.vector) return;
-        this.joystick.x = data.vector.x;   // turn camera left/right
-        this.joystick.y = -data.vector.y;  // move forward/back
-      });
-      manager.on('end', () => { this.joystick.x = 0; this.joystick.y = 0; });
-    }
+    if (!window.matchMedia('(pointer: coarse)').matches) return;
+
+    // Dynamic joystick — appears wherever you touch the left 50% of screen
+    const zone = document.getElementById('joystick-zone');
+    const manager = nipplejs.create({
+      zone: zone,
+      mode: 'dynamic',
+      size: 90,
+      color: 'rgba(255,255,255,0.35)',
+      restOpacity: 0,
+    });
+    manager.on('move', (_, data) => {
+      if (!data.vector) return;
+      this.joystick.x =  data.vector.x;
+      this.joystick.y = -data.vector.y;
+    });
+    manager.on('end', () => { this.joystick.x = 0; this.joystick.y = 0; });
   }
 
   // ── Touch look (right half of screen) ────────────────────────────────────

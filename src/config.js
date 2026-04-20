@@ -76,7 +76,8 @@ export const ROOM_ZONES = [
 //  room:  0=Central Hall 1=North 2=East 3=West
 //  wall:  'north' | 'south' | 'east' | 'west'
 //  offset: position along wall from its centre (metres)
-//  size:   { w, h } in world units
+//  size:   { w, h } — only h matters now. w auto-adjusts to match image aspect ratio.
+//           h controls how tall the painting appears on the wall (~1.0=small, 2.0=large)
 //  enquire: optional email or URL for 'Enquire' button. Leave as '' to hide.
 //
 //  ── HOW TO MATCH FRAME TO PAINTING ──────────
