@@ -36,17 +36,26 @@ export class AudioManager {
     });
 
     audio.disableRemotePlayback = true;
+    try { audio.remote.disableRemotePlayback(); } catch(e) {}
+
     audio.play().catch(e => {
       console.warn('Audio play failed:', e);
     });
 
-    // Prevent OS lock screen media player
+    // Aggressively suppress OS media player on Android
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = null;
-      navigator.mediaSession.setActionHandler('play', null);
-      navigator.mediaSession.setActionHandler('pause', null);
-      navigator.mediaSession.setActionHandler('previoustrack', null);
-      navigator.mediaSession.setActionHandler('nexttrack', null);
+      navigator.mediaSession.playbackState = 'none';
+      const noOp = () => {};
+      const actions = ['play','pause','stop','seekbackward','seekforward',
+                       'seekto','previoustrack','nexttrack','skipad'];
+      for (const action of actions) {
+        try { navigator.mediaSession.setActionHandler(action, noOp); } catch(e) {}
+      }
+      // Override playback state after short delay
+      setTimeout(() => {
+        try { navigator.mediaSession.playbackState = 'none'; } catch(e) {}
+      }, 500);
     }
 
     document.getElementById('audio-btn').textContent = this.muted ? '♪' : '♫';
