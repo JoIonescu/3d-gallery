@@ -10,7 +10,8 @@ import { Minimap } from './minimap.js';
 // ── Renderer ─────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('canvas');
 const isMobile  = window.matchMedia('(pointer: coarse)').matches;
-const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*A[0-9]|Moto/i.test(navigator.userAgent));
+const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
+if (isLowEnd) { console.log('Low-end device detected — performance mode'); }
 const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: isMobile ? 'low-power' : 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(isLowEnd ? 0.75 : isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
@@ -20,15 +21,19 @@ renderer.toneMapping         = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 function onResize() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  // Use visualViewport on iOS for correct size excluding browser chrome
+  const vv = window.visualViewport;
+  const w  = vv ? Math.round(vv.width)  : window.innerWidth;
+  const h  = vv ? Math.round(vv.height) : window.innerHeight;
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', onResize);
-// iOS fires resize when address bar shows/hides
-window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
+window.addEventListener('orientationchange', () => setTimeout(onResize, 300));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', onResize);
+}
 
 // ── Scene & Camera ────────────────────────────────────────────────────────────
 const scene  = new THREE.Scene();
@@ -174,25 +179,25 @@ let galleryActive = false;
 
 function animate(now) {
   requestAnimationFrame(animate);
-  if (!galleryActive) return;
 
   const dt = Math.min((now - lastTime) / 1000, 0.05);
   lastTime = now;
 
-  if (!player.locked) {
+  if (galleryActive && !player.locked) {
     player.update(dt);
     const nearest = findNearest(paintingObjects, camera.position);
     infoCard.update(nearest, dt);
     updateRoomLabel(camera.position.x, camera.position.z);
   }
 
-  minimap.update(camera);
+  if (galleryActive) {
+    minimap.update(camera);
+    const inCorridor = camera.position.z > 10;
+    const targetExp  = inCorridor ? 0.55 : 1.08;
+    renderer.toneMappingExposure += (targetExp - renderer.toneMappingExposure) * 0.03;
+  }
 
-  // Eye adaptation — darker in corridor, brighter in gallery
-  const inCorridor = camera.position.z > 10;
-  const targetExp  = inCorridor ? 0.55 : 1.08;
-  renderer.toneMappingExposure += (targetExp - renderer.toneMappingExposure) * 0.03;
-
+  // Always render — so intro animation is visible on desktop
   renderer.render(scene, camera);
 }
 

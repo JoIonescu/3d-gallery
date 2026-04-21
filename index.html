@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Hanna — Contemporary Exhibition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -223,7 +223,7 @@
     #info-card {
       position: absolute; right: 28px;
       top: 50%; transform: translateY(-50%) translateX(24px);
-      width: 290px;
+      width: 290px; max-height: 85vh; overflow-y: auto;
       background: rgba(8,8,8,0.9);
       border: 0.5px solid rgba(255,255,255,0.1);
       padding: 28px 28px 24px;
@@ -329,6 +329,12 @@
     #move-hint.fade { opacity: 0; }
     @media (pointer: coarse) {
       #move-hint { display: block; }
+    }
+
+    @supports (padding-top: env(safe-area-inset-top)) {
+      #room-label { top: calc(28px + env(safe-area-inset-top)); }
+      #audio-btn  { top: calc(24px + env(safe-area-inset-top)); right: calc(24px + env(safe-area-inset-right)); }
+      #info-card  { top: calc(50% + env(safe-area-inset-top) / 2); }
     }
   </style>
 </head>
