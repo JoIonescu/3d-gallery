@@ -97,19 +97,21 @@ export class Player {
   // ── Mobile joystick ───────────────────────────────────────────────────────
 
   _initMobileJoystick() {
-    // Only on iOS — Android uses touch-look (swipe left side)
+    // Only on iOS Safari — Android uses touch-look only
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (!isIOS) return;
 
     const zone = document.getElementById('joystick-zone');
     if (!zone) return;
 
+    // Dynamic mode — joystick only appears when finger touches, no visible ring at rest
     const manager = nipplejs.create({
       zone: zone,
-      mode: 'static',
-      position: { left: '50%', top: '50%' },
+      mode: 'dynamic',
       size: 96,
-      color: 'rgba(255,255,255,0.28)',
+      color: 'rgba(255,255,255,0.35)',
+      restOpacity: 0,
+      fadeTime: 100,
     });
     manager.on('move', (_, data) => {
       if (!data.vector) return;

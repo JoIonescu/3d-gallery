@@ -12,8 +12,7 @@ const canvas   = document.getElementById('canvas');
 const isMobile  = window.matchMedia('(pointer: coarse)').matches;
 const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*A[0-9]|Moto/i.test(navigator.userAgent));
 const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: isMobile ? 'low-power' : 'high-performance' });
-// Use innerWidth/innerHeight for correct size on iOS Safari
-renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(isLowEnd ? 0.75 : isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled   = false;
 renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
@@ -23,7 +22,7 @@ renderer.toneMappingExposure = 1.05;
 function onResize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  renderer.setSize(w, h, false);
+  renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
