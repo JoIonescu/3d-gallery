@@ -97,18 +97,18 @@ export class Player {
   // ── Mobile joystick ───────────────────────────────────────────────────────
 
   _initMobileJoystick() {
-    if (!window.matchMedia('(pointer: coarse)').matches) return;
+    // Only on iOS — Android uses touch-look (swipe left side)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (!isIOS) return;
 
     const zone = document.getElementById('joystick-zone');
     if (!zone) return;
 
-    // Calculate left/top from zone size - nipplejs only supports left/top
-    const size = 96;
     const manager = nipplejs.create({
       zone: zone,
       mode: 'static',
       position: { left: '50%', top: '50%' },
-      size: size,
+      size: 96,
       color: 'rgba(255,255,255,0.28)',
     });
     manager.on('move', (_, data) => {
