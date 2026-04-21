@@ -124,7 +124,7 @@ function _rectLight(scene, cx, cz) {
 export function playIntroAnimation(camera, onComplete) {
   const startZ   = 17.2;
   const endZ     = 13.5;
-  const duration = 4200; // ms
+  const duration = 2200; // ms — shorter feels more responsive
   const startTime = performance.now();
 
   // Lock player during animation

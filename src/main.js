@@ -19,11 +19,16 @@ renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
 renderer.toneMapping         = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
-window.addEventListener('resize', () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
+function onResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-});
+}
+window.addEventListener('resize', onResize);
+// iOS fires resize when address bar shows/hides
+window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 
 // ── Scene & Camera ────────────────────────────────────────────────────────────
 const scene  = new THREE.Scene();
@@ -114,7 +119,9 @@ function enterGallery() {
   lastTime = performance.now();
   audio.start();
   minimap.show();
-  document.getElementById('joystick-zone').classList.add('active');
+  // Only show joystick on iOS — Android uses touch-look
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) document.getElementById('joystick-zone').classList.add('active');
   // Show movement hint on mobile, fade after 4s or first movement
   if (window.matchMedia('(pointer: coarse)').matches) {
     const hint = document.getElementById('move-hint');

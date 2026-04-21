@@ -17,13 +17,15 @@
       background: #0a0a0a;
       font-family: 'Inter', -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
+      height: 100vh;
+      height: 100dvh;
     }
 
-    canvas { display: block; width: 100vw; height: 100vh; }
+    canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
 
     /* ── Loading ── */
     #loading {
-      position: absolute; inset: 0;
+      position: fixed; inset: 0;
       background: #0a0a0a;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
@@ -39,7 +41,7 @@
 
     /* ── Enter screen ── */
     #enter {
-      position: absolute; inset: 0;
+      position: fixed; inset: 0;
       display: none; flex-direction: column;
       align-items: center; justify-content: center;
       z-index: 100;
