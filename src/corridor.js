@@ -54,10 +54,89 @@ export function buildCorridor(scene) {
   _doorWall(scene, w, wallMat, cx, cz - d / 2, 0);
 
   // ── Lighting ──────────────────────────────────────────────────────────────
-
   // No corridor lights — the gallery's ambient light bleeds in naturally
 
-  // No overhead light — darkness is intentional, gallery light ahead guides the visitor
+  // ── Curatorial statement on left wall ────────────────────────────────────
+  _buildCuratorialText(scene, cx, cz, w, d);
+}
+
+function _buildCuratorialText(scene, cx, cz, w, d) {
+  const canvas = document.createElement('canvas');
+  canvas.width  = 1024;
+  canvas.height = 1536;
+  const ctx = canvas.getContext('2d');
+
+  // Transparent background
+  ctx.clearRect(0, 0, 1024, 1536);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.82)';
+
+  // Title
+  ctx.font = '600 38px -apple-system, Helvetica Neue, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fillText('Curatorial Statement', 60, 90);
+
+  // Divider
+  ctx.fillStyle = '#FBD00E';
+  ctx.fillRect(60, 108, 180, 2);
+
+  // Body text
+  ctx.font = '300 24px -apple-system, Helvetica Neue, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.72)';
+
+  const lines = [
+    '',
+    'This body of work unfolds as a vivid',
+    'exploration of inner landscapes, where',
+    'identity, emotion, and perception take on',
+    'organic and symbolic form. Moving fluidly',
+    'across mixed media, collage, printmaking,',
+    'and drawing, the artist constructs a visual',
+    'language rooted in layering, intuition,',
+    'and play.',
+    '',
+    'Recurring motifs: eyes, botanical forms,',
+    'fragmented bodies, and hybrid figures,',
+    'act as anchors within a shifting terrain.',
+    'They suggest awareness, growth, and',
+    'transformation, while also questioning how',
+    'identity is formed, observed, and expressed.',
+    'Figures appear both grounded and dissolving,',
+    'caught between visibility and introspection,',
+    'control and spontaneity.',
+    '',
+    'The works resist fixed narratives. Instead,',
+    'they invite a slower engagement, where',
+    'meaning emerges through texture, color,',
+    'and association. Bright, almost electric',
+    'palettes contrast with moments of quiet',
+    'tension, creating a dynamic balance between',
+    'the playful and the reflective.',
+  ];
+
+  let y = 140;
+  for (const line of lines) {
+    ctx.fillText(line, 60, y);
+    y += 36;
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const mat     = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.FrontSide,
+  });
+
+  // Place on west wall (left as visitor walks north)
+  const panelW = 2.2;
+  const panelH = 3.3;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), mat);
+
+  // West wall of corridor: x = cx - w/2, face east (rotateY = PI/2)
+  mesh.position.set(cx - w / 2 + 0.02, panelH / 2 + 0.4, cz + 0.5);
+  mesh.rotation.y = Math.PI / 2;
+  scene.add(mesh);
 }
 
 function _solidWall(scene, length, mat, px, pz, rotY) {

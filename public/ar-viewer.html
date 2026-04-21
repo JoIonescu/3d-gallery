@@ -2,21 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>View in your space</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #f0f0f0; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; }
+    body { background: #f2f2f2; font-family: -apple-system, sans-serif; height: 100dvh; display: flex; flex-direction: column; }
     #header {
-      padding: 14px 20px; background: #fff;
+      padding: 14px 20px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      background: #fff;
       display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
+      border-bottom: 1px solid #ddd; flex-shrink: 0;
     }
-    #ptitle { font-size: 13px; letter-spacing: 0.06em; color: #333; }
-    #back { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #FBD00E; background: none; border: none; cursor: pointer; font-weight: 600; }
-    model-viewer { width: 100%; flex: 1; background-color: #f5f5f5; --poster-color: #f5f5f5; }
-    #hint { text-align: center; padding: 12px; font-size: 11px; color: #888; flex-shrink: 0; background: #fff; }
+    #ptitle { font-size: 13px; letter-spacing: 0.06em; color: #222; }
+    #back {
+      font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #FBD00E; background: none; border: none; cursor: pointer; font-weight: 700;
+    }
+    model-viewer {
+      width: 100%; flex: 1;
+      background-color: #e8e8e8;
+      --poster-color: #e8e8e8;
+    }
+    #hint {
+      text-align: center; padding: 13px;
+      padding-bottom: max(13px, env(safe-area-inset-bottom));
+      font-size: 11px; color: #888; background: #fff; flex-shrink: 0;
+      border-top: 1px solid #eee;
+    }
+    /* Make AR button prominent */
+    model-viewer::part(default-ar-button) {
+      bottom: 24px; right: 24px;
+      background-color: #FBD00E;
+      border-radius: 50px;
+      padding: 12px 20px;
+      color: #000;
+      font-weight: 600;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -24,30 +48,48 @@
     <span id="ptitle">Loading…</span>
     <button id="back" onclick="history.back()">✕ Close</button>
   </div>
+
   <model-viewer
     id="viewer"
     ar
-    ar-modes="webxr scene-viewer quick-look"
+    ar-modes="scene-viewer quick-look"
     ar-scale="fixed"
     camera-controls
     touch-action="pan-y"
-    auto-rotate
     shadow-intensity="1"
-    exposure="1"
+    exposure="1.1"
     environment-image="neutral"
-    skybox-image=""
+    xr-environment
   ></model-viewer>
-  <div id="hint">Pinch to resize · Tap AR button to place in your room</div>
+
+  <div id="hint">Rotate to inspect · Tap the AR button to place in your room</div>
+
   <script>
-    const p = new URLSearchParams(window.location.search);
-    const model = p.get('model'), title = p.get('title') || 'Artwork';
+    const p     = new URLSearchParams(window.location.search);
+    const model = p.get('model');
+    const title = p.get('title') || 'Artwork';
+
     document.getElementById('ptitle').textContent = title;
+
     const v = document.getElementById('viewer');
     v.src = model;
     v.alt = title;
-    v.addEventListener('load', () => { v.cameraOrbit = '0deg 90deg auto'; });
-    v.addEventListener('ar-status', e => {
-      if (e.detail.status === 'failed') alert('AR not supported on this device or browser.');
+
+    v.addEventListener('load', () => {
+      // Face the painting straight on
+      v.cameraOrbit = '0deg 90deg auto';
+    });
+
+    v.addEventListener('ar-status', (e) => {
+      if (e.detail.status === 'session-started') {
+        document.getElementById('hint').textContent = 'Point camera at a flat surface to place the painting';
+      }
+      if (e.detail.status === 'object-placed') {
+        document.getElementById('hint').textContent = 'Painting placed · Move around to view it';
+      }
+      if (e.detail.status === 'failed') {
+        document.getElementById('hint').textContent = 'AR not available — try Chrome on Android or Safari on iOS 12+';
+      }
     });
   </script>
 </body>
