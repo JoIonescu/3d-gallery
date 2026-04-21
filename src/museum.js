@@ -591,6 +591,84 @@ export function buildMuseum(scene) {
   addLighting(scene);
   for (const room of ROOMS) buildRoom(scene, room, mat);
   for (const p of PAINTINGS) buildPainting(scene, p, mat);
+  buildCuratorialStatement(scene);
 
   return paintingObjects;
+}
+
+function buildCuratorialStatement(scene) {
+  // Central Hall south wall: z = +10, facing north (rotY = Math.PI)
+  // Visitor sees this when they first turn around after entering
+  const c = document.createElement('canvas');
+  c.width  = 1024;
+  c.height = 1536;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 1024, 1536);
+
+  // Title
+  ctx.font = 'bold 42px Helvetica Neue, Helvetica, Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fillText('Curatorial Statement', 60, 90);
+
+  // Yellow accent rule
+  ctx.fillStyle = '#FBD00E';
+  ctx.fillRect(60, 112, 200, 2.5);
+
+  // Body paragraphs
+  ctx.font = '300 26px Helvetica Neue, Helvetica, Arial, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.70)';
+
+  const paragraphs = [
+    [
+      'This body of work unfolds as a vivid exploration',
+      'of inner landscapes, where identity, emotion, and',
+      'perception take on organic and symbolic form.',
+      'Moving fluidly across mixed media, collage,',
+      'printmaking, and drawing, the artist constructs a',
+      'visual language rooted in layering, intuition,',
+      'and play.',
+    ],
+    [
+      'Recurring motifs: eyes, botanical forms, fragmented',
+      'bodies, and hybrid figures, act as anchors within',
+      'a shifting terrain. They suggest awareness, growth,',
+      'and transformation, while also questioning how',
+      'identity is formed, observed, and expressed.',
+      'Figures appear both grounded and dissolving,',
+      'caught between visibility and introspection,',
+      'control and spontaneity.',
+    ],
+    [
+      'The works resist fixed narratives. Instead, they',
+      'invite a slower engagement, where meaning emerges',
+      'through texture, color, and association. Bright,',
+      'almost electric palettes contrast with moments of',
+      'quiet tension, creating a dynamic balance between',
+      'the playful and the reflective.',
+    ],
+  ];
+
+  let y = 160;
+  for (const para of paragraphs) {
+    for (const line of para) {
+      ctx.fillText(line, 60, y);
+      y += 38;
+    }
+    y += 28; // paragraph gap
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, depthWrite: false, side: THREE.FrontSide,
+  });
+
+  const panelW = 6.0;
+  const panelH = 3.8;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), mat);
+
+  // Central Hall south wall inner face: z=+10, slightly offset inward
+  // rotateY = 0 so it faces the visitor coming from the corridor (looking south)
+  mesh.position.set(0, panelH / 2 + 0.5, 9.92);
+  mesh.rotation.y = 0;
+  scene.add(mesh);
 }
