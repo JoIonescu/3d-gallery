@@ -666,9 +666,9 @@ function buildCuratorialStatement(scene) {
   const panelH = 3.8;
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), mat);
 
-  // Central Hall south wall inner face: z=+10, slightly offset inward
-  // rotateY = 0 so it faces the visitor coming from the corridor (looking south)
-  mesh.position.set(0, panelH / 2 + 0.5, 9.92);
-  mesh.rotation.y = 0;
+  // South wall inner face: visitor stands in hall looking south (+Z)
+  // rotation.y = Math.PI so the plane normal faces inward (-Z toward the visitor)
+  mesh.position.set(0, panelH / 2 + 0.3, 9.88);
+  mesh.rotation.y = Math.PI;
   scene.add(mesh);
 }
