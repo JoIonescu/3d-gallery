@@ -117,7 +117,7 @@ export const PAINTINGS = [
     medium: 'Gelli plate printing, markers, crayons, fineliner, varnish on paper',
     dimensions: '80 × 80 cm',
     description: 'Everyday forms transform into symbolic rituals of care and identity.',
-    image: '/paintings/02.jpg',
+    image: '/paintings/02.jpeg',
     color: '#7a9fb5',
     room: 2, wall: 'north', offset: -2.5, size: { w: 1.9, h: 1.9 },
     enquire: 'mailto:hanna@imagohanna.com',
