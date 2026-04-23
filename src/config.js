@@ -202,7 +202,7 @@ export const PAINTINGS = [
   // Update title, year, medium, dimensions, description when ready
   {
     id: 10,
-    title: 'Untitled',
+    title: 'first new',
     year: '2026',
     medium: '',
     dimensions: '',
@@ -214,7 +214,7 @@ export const PAINTINGS = [
   },
   {
     id: 11,
-    title: 'Untitled',
+    title: 'another one',
     year: '2026',
     medium: '',
     dimensions: '',
@@ -226,7 +226,7 @@ export const PAINTINGS = [
   },
   {
     id: 12,
-    title: 'Untitled',
+    title: 'something',
     year: '2026',
     medium: '',
     dimensions: '',
@@ -238,7 +238,7 @@ export const PAINTINGS = [
   },
   {
     id: 13,
-    title: 'Untitled',
+    title: 'i dont know',
     year: '2026',
     medium: '',
     dimensions: '',
@@ -250,7 +250,7 @@ export const PAINTINGS = [
   },
   {
     id: 14,
-    title: 'Untitled',
+    title: 'this is a painting title',
     year: '2026',
     medium: '',
     dimensions: '',
@@ -286,7 +286,7 @@ export const PAINTINGS = [
   },
   {
     id: 17,
-    title: 'Untitled',
+    title: 'this is a title placeholder',
     year: '2026',
     medium: '',
     dimensions: '',
