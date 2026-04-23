@@ -3,6 +3,7 @@
 // Android/Desktop: Web Audio API — avoids OS lock screen media player
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isIOSSafari = isIOS && /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 
 export class AudioManager {
   constructor() {
@@ -28,7 +29,7 @@ export class AudioManager {
     if (this.started) return;
     this.started = true;
 
-    if (isIOS) {
+    if (isIOSSafari) {
       this._startIOS();
     } else {
       this._startWebAudio();
@@ -105,7 +106,7 @@ export class AudioManager {
 
     this.muted = !this.muted;
 
-    if (isIOS && this.audio) {
+    if (isIOSSafari && this.audio) {
       this.audio.volume = this.muted ? 0 : 0.55;
     } else if (this.gainNode && this.ctx) {
       this.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);

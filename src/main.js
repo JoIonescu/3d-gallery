@@ -14,7 +14,7 @@ const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Tech
 if (isLowEnd) { console.log('Low-end device detected — performance mode'); }
 const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: isMobile ? 'low-power' : 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(isLowEnd ? 0.75 : isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(isLowEnd ? 0.75 : Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled   = false;
 renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
 renderer.toneMapping         = THREE.ACESFilmicToneMapping;
@@ -197,8 +197,8 @@ function animate(now) {
     renderer.toneMappingExposure += (targetExp - renderer.toneMappingExposure) * 0.03;
   }
 
-  // Always render — so intro animation is visible on desktop
-  renderer.render(scene, camera);
+  // Render only after gallery entered (prevents corridor flash on load)
+  if (galleryActive) renderer.render(scene, camera);
 }
 
 requestAnimationFrame(animate);

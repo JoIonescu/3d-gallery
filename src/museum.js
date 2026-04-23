@@ -597,78 +597,105 @@ export function buildMuseum(scene) {
 }
 
 function buildCuratorialStatement(scene) {
-  // Central Hall south wall: z = +10, facing north (rotY = Math.PI)
-  // Visitor sees this when they first turn around after entering
-  const c = document.createElement('canvas');
-  c.width  = 1024;
-  c.height = 1536;
+  // Placed on south wall, offset LEFT of centre to avoid the doorway
+  // South wall z=+10, doorway is centred at x=0 (DOOR_W=3.4m)
+  // Left safe zone: x ~ -7 to -2, so we centre text around x=-5.5
+
+  // High-res canvas for sharp text on mobile (2x)
+  const DPR = 2;
+  const CW  = 900 * DPR;
+  const CH  = 1400 * DPR;
+  const c   = document.createElement('canvas');
+  c.width   = CW;
+  c.height  = CH;
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 1024, 1536);
+  ctx.scale(DPR, DPR);
+  ctx.clearRect(0, 0, 900, 1400);
+
+  // Load Questrial via FontFace API
+  const font = new FontFace('Questrial', 'url(https://fonts.gstatic.com/s/questrial/v18/QdVUSTchPBgZfolSCBvnpIn7.woff2)');
+  font.load().then(f => {
+    document.fonts.add(f);
+    _drawStatement(ctx, c, scene);
+  }).catch(() => {
+    // Fallback if font fails to load
+    _drawStatement(ctx, c, scene);
+  });
+}
+
+function _drawStatement(ctx, c, scene) {
+  ctx.clearRect(0, 0, 900, 1400);
+
+  const titleFont = 'bold 38px Questrial, Helvetica Neue, sans-serif';
+  const bodyFont  = '22px Questrial, Helvetica Neue, sans-serif';
 
   // Title
-  ctx.font = 'bold 42px Helvetica Neue, Helvetica, Arial, sans-serif';
+  ctx.font = titleFont;
   ctx.fillStyle = 'rgba(255,255,255,0.95)';
-  ctx.fillText('Curatorial Statement', 60, 90);
+  ctx.fillText('Curatorial Statement', 50, 80);
 
   // Yellow accent rule
   ctx.fillStyle = '#FBD00E';
-  ctx.fillRect(60, 112, 200, 2.5);
+  ctx.fillRect(50, 100, 180, 2);
 
-  // Body paragraphs
-  ctx.font = '300 26px Helvetica Neue, Helvetica, Arial, sans-serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.70)';
+  // Body
+  ctx.font = bodyFont;
+  ctx.fillStyle = 'rgba(255,255,255,0.72)';
 
   const paragraphs = [
     [
-      'This body of work unfolds as a vivid exploration',
-      'of inner landscapes, where identity, emotion, and',
-      'perception take on organic and symbolic form.',
-      'Moving fluidly across mixed media, collage,',
-      'printmaking, and drawing, the artist constructs a',
-      'visual language rooted in layering, intuition,',
+      'This body of work unfolds as a vivid',
+      'exploration of inner landscapes, where',
+      'identity, emotion, and perception take on',
+      'organic and symbolic form. Moving fluidly',
+      'across mixed media, collage, printmaking,',
+      'and drawing, the artist constructs a visual',
+      'language rooted in layering, intuition,',
       'and play.',
     ],
     [
-      'Recurring motifs: eyes, botanical forms, fragmented',
-      'bodies, and hybrid figures, act as anchors within',
-      'a shifting terrain. They suggest awareness, growth,',
-      'and transformation, while also questioning how',
+      'Recurring motifs: eyes, botanical forms,',
+      'fragmented bodies, and hybrid figures,',
+      'act as anchors within a shifting terrain.',
+      'They suggest awareness, growth, and',
+      'transformation, while also questioning how',
       'identity is formed, observed, and expressed.',
       'Figures appear both grounded and dissolving,',
       'caught between visibility and introspection,',
       'control and spontaneity.',
     ],
     [
-      'The works resist fixed narratives. Instead, they',
-      'invite a slower engagement, where meaning emerges',
-      'through texture, color, and association. Bright,',
-      'almost electric palettes contrast with moments of',
-      'quiet tension, creating a dynamic balance between',
+      'The works resist fixed narratives. Instead,',
+      'they invite a slower engagement, where',
+      'meaning emerges through texture, color,',
+      'and association. Bright, almost electric',
+      'palettes contrast with moments of quiet',
+      'tension, creating a dynamic balance between',
       'the playful and the reflective.',
     ],
   ];
 
-  let y = 160;
+  let y = 140;
   for (const para of paragraphs) {
     for (const line of para) {
-      ctx.fillText(line, 60, y);
-      y += 38;
+      ctx.fillText(line, 50, y);
+      y += 32;
     }
-    y += 28; // paragraph gap
+    y += 22;
   }
 
   const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
   const mat = new THREE.MeshBasicMaterial({
     map: tex, transparent: true, depthWrite: false, side: THREE.FrontSide,
   });
 
-  const panelW = 6.0;
-  const panelH = 3.8;
+  // Placed on LEFT side of south wall — centred around x=-5.5
+  // South wall inner face at z ≈ 9.85, rotation.y = Math.PI faces visitor
+  const panelW = 5.5;
+  const panelH = 3.6;
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(panelW, panelH), mat);
-
-  // South wall inner face: visitor stands in hall looking south (+Z)
-  // rotation.y = Math.PI so the plane normal faces inward (-Z toward the visitor)
-  mesh.position.set(0, panelH / 2 + 0.3, 9.88);
+  mesh.position.set(-5.5, panelH / 2 + 0.3, 9.85);
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
 }
