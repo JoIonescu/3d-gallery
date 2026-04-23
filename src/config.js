@@ -12,14 +12,12 @@ export const PLAYER_START = { x: 0, y: 1.7, z: 17 }; // inside entrance corridor
 export const PROXIMITY_DIST = 3.8;
 
 // Museum rooms
-// solidWalls: walls with no opening
-// doorWalls:  walls with a centred doorway opening
 export const ROOMS = [
   {
     id: 0, name: 'Central Hall',
     cx: 0, cz: 0, w: 20, d: 20,
     solidWalls: [],
-    doorWalls:  ['north', 'east', 'west'],  // south omitted — corridor wall at same Z
+    doorWalls:  ['north', 'east', 'west'],
   },
   {
     id: 1, name: 'North Gallery',
@@ -41,26 +39,22 @@ export const ROOMS = [
   },
 ];
 
-// Entrance corridor — built separately in corridor.js
 export const CORRIDOR = {
   cx: 0, cz: 14, w: 3.6, d: 8,
 };
 
-// Collision zones for player movement (axis-aligned rectangles in XZ)
 export const MOVE_ZONES = [
-  { xMin: -9.6,  xMax:  9.6,  zMin: -9.6,  zMax: 9.6   }, // Central Hall
-  { xMin: -7.6,  xMax:  7.6,  zMin: -25.6, zMax: -10.3  }, // North Gallery
-  { xMin: 10.3,  xMax:  25.6, zMin: -6.6,  zMax:  6.6   }, // East Gallery
-  { xMin: -25.6, xMax: -10.3, zMin: -6.6,  zMax:  6.6   }, // West Gallery
-  // Doorway corridors
-  { xMin: -1.6,  xMax:  1.6,  zMin: -10.5, zMax: -9.5   }, // C ↔ North
-  { xMin:  9.5,  xMax:  10.5, zMin: -1.6,  zMax:  1.6   }, // C ↔ East
-  { xMin: -10.5, xMax: -9.5,  zMin: -1.6,  zMax:  1.6   }, // C ↔ West
-  { xMin: -1.6,  xMax:  1.6,  zMin:  9.5,  zMax: 10.5   }, // C ↔ Corridor
-  { xMin: -1.6,  xMax:  1.6,  zMin: 10.4,  zMax: 18.2   }, // Entrance corridor
+  { xMin: -9.6,  xMax:  9.6,  zMin: -9.6,  zMax: 9.6   },
+  { xMin: -7.6,  xMax:  7.6,  zMin: -25.6, zMax: -10.3  },
+  { xMin: 10.3,  xMax:  25.6, zMin: -6.6,  zMax:  6.6   },
+  { xMin: -25.6, xMax: -10.3, zMin: -6.6,  zMax:  6.6   },
+  { xMin: -1.6,  xMax:  1.6,  zMin: -10.5, zMax: -9.5   },
+  { xMin:  9.5,  xMax:  10.5, zMin: -1.6,  zMax:  1.6   },
+  { xMin: -10.5, xMax: -9.5,  zMin: -1.6,  zMax:  1.6   },
+  { xMin: -1.6,  xMax:  1.6,  zMin:  9.5,  zMax: 10.5   },
+  { xMin: -1.6,  xMax:  1.6,  zMin: 10.4,  zMax: 18.2   },
 ];
 
-// Room bounding boxes for label detection
 export const ROOM_ZONES = [
   { id: 0, name: 'Central Hall',   xMin:-10, xMax:10,  zMin:-10, zMax:10  },
   { id: 1, name: 'North Gallery',  xMin:-8,  xMax:8,   zMin:-26, zMax:-10 },
@@ -76,28 +70,12 @@ export const ROOM_ZONES = [
 //  room:  0=Central Hall 1=North 2=East 3=West
 //  wall:  'north' | 'south' | 'east' | 'west'
 //  offset: position along wall from its centre (metres)
-//  size:   { w, h } — only h matters now. w auto-adjusts to match image aspect ratio.
-//           h controls how tall the painting appears on the wall (~1.0=small, 2.0=large)
-//  enquire: optional email or URL for 'Enquire' button. Leave as '' to hide.
-//
-//  ── HOW TO MATCH FRAME TO PAINTING ──────────
-//  The frame size MUST match the painting's real aspect ratio.
-//  Formula: divide real dimensions by a scale factor (~22).
-//
-//  Examples:
-//    100 × 80 cm  →  { w: 2.0, h: 1.6 }   (÷ 50)
-//     80 × 80 cm  →  { w: 1.8, h: 1.8 }   (square)
-//     60 × 90 cm  →  { w: 1.4, h: 2.1 }   (portrait ÷ ~43)
-//    140 × 100 cm →  { w: 2.6, h: 1.86 }  (÷ ~54)
-//
-//  Quick formula: w = real_width_cm / 50
-//                 h = real_height_cm / 50
-//  Adjust the divisor up/down to make the painting larger or smaller.
-//
-//  The image file can be any resolution — it will always fill the frame.
-//  For best quality use at least 1800px on the longest side.
+//  size:   { w, h } — only h matters. w auto-adjusts to image aspect ratio.
+//  enquire: email or URL for enquire button. Leave '' to hide.
 // ─────────────────────────────────────────────
 export const PAINTINGS = [
+
+  // ── Original 10 paintings — unchanged ────────────────────────────────────
   {
     id: 0,
     title: 'Electric Bloom',
@@ -164,7 +142,7 @@ export const PAINTINGS = [
     year: '2026',
     medium: 'Collage on paper (magazine clippings, markers, fineliners, varnish)',
     dimensions: '70 × 50 cm',
-    description: 'Text, texture, and botanical elements intersect to explore identity as something assembled—shaped by perception, desire, and external influence. .',
+    description: 'Text, texture, and botanical elements intersect to explore identity as something assembled—shaped by perception, desire, and external influence.',
     image: '/paintings/06.jpg',
     color: '#555',
     room: 1, wall: 'east', offset: -2, size: { w: 1.5, h: 2.0 },
@@ -176,7 +154,7 @@ export const PAINTINGS = [
     year: '2026',
     medium: 'Acrylics and acrylic markers on bamboo paper',
     dimensions: '140 × 100 cm',
-    description: 'Surrounded by chaotic, vein-like structures, it suggests heightened awareness and the tension between observation and vulnerability. ',
+    description: 'Surrounded by chaotic, vein-like structures, it suggests heightened awareness and the tension between observation and vulnerability.',
     image: '/paintings/07.jpg',
     color: '#d4a853',
     room: 2, wall: 'east', offset: -2, size: { w: 2.6, h: 1.9 },
@@ -216,6 +194,106 @@ export const PAINTINGS = [
     image: '/paintings/10.jpg',
     color: '#2a2a2a',
     room: 3, wall: 'north', offset: 0, size: { w: 1.7, h: 2.3 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+
+  // ── 8 new frames — 2 per room ─────────────────────────────────────────────
+  // Images: /paintings/11.jpg through /paintings/18.jpg
+  // Update title, year, medium, dimensions, description when ready
+  {
+    id: 10,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/11.jpg',
+    color: '#8a7060',
+    room: 0, wall: 'east', offset: -5, size: { w: 2.0, h: 1.8 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 11,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/12.jpg',
+    color: '#6a8070',
+    room: 0, wall: 'east', offset: 5, size: { w: 2.0, h: 1.8 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 12,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/13.jpg',
+    color: '#a07850',
+    room: 1, wall: 'west', offset: -3, size: { w: 1.8, h: 2.0 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 13,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/14.jpg',
+    color: '#507090',
+    room: 1, wall: 'west', offset: 3, size: { w: 1.8, h: 2.0 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 14,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/15.jpg',
+    color: '#906050',
+    room: 2, wall: 'east', offset: 3.5, size: { w: 1.8, h: 1.8 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 15,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/16.jpg',
+    color: '#708050',
+    room: 2, wall: 'south', offset: -3, size: { w: 1.9, h: 2.0 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 16,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/17.jpg',
+    color: '#806070',
+    room: 3, wall: 'west', offset: 3, size: { w: 1.8, h: 1.8 },
+    enquire: 'mailto:hanna@imagohanna.com',
+  },
+  {
+    id: 17,
+    title: 'Untitled',
+    year: '2026',
+    medium: '',
+    dimensions: '',
+    description: 'Replace with your own statement.',
+    image: '/paintings/18.jpg',
+    color: '#607080',
+    room: 3, wall: 'south', offset: -3, size: { w: 2.0, h: 1.7 },
     enquire: 'mailto:hanna@imagohanna.com',
   },
 ];
