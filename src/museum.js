@@ -621,11 +621,11 @@ function buildCuratorialStatement(scene) {
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
 
-  const desc = 'This body of work unfolds as a vivid exploration of inner landscapes, where identity, emotion, and perception take on organic and symbolic form. Moving fluidly across mixed media, collage, printmaking, and drawing, the artist constructs a visual language rooted in layering, intuition, and play.
+  const desc = `This body of work unfolds as a vivid exploration of inner landscapes, where identity, emotion, and perception take on organic and symbolic form. Moving fluidly across mixed media, collage, printmaking, and drawing, the artist constructs a visual language rooted in layering, intuition, and play.
 
 Recurring motifs: eyes, botanical forms, fragmented bodies, and hybrid figures, act as anchors within a shifting terrain. They suggest awareness, growth, and transformation, while also questioning how identity is formed, observed, and expressed. Figures appear both grounded and dissolving, caught between visibility and introspection, control and spontaneity.
 
-The works resist fixed narratives. Instead, they invite a slower engagement, where meaning emerges through texture, color, and association. Bright, almost electric palettes contrast with moments of quiet tension, creating a dynamic balance between the playful and the reflective.';
+The works resist fixed narratives. Instead, they invite a slower engagement, where meaning emerges through texture, color, and association. Bright, almost electric palettes contrast with moments of quiet tension, creating a dynamic balance between the playful and the reflective.`;
 
   paintingObjects.push({
     mesh: { position: new THREE.Vector3(-5.5, 2.1, 9.88) },
