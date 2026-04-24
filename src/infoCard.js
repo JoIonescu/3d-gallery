@@ -87,10 +87,30 @@ export class InfoCard {
     this.current           = p;
     this._activeZoomTarget = obj;
 
+    // Update label text
+    const labelEl = this.card.querySelector('.ic-label');
+    if (labelEl) labelEl.textContent = obj.isCuratorial ? 'Exhibition' : 'Hanna — Artwork';
+
     this.titleEl.textContent = p.title;
-    this.yearEl.textContent  = p.year;
-    this.metaEl.innerHTML    = `${p.medium}<br>${p.dimensions}`;
-    this.descEl.textContent  = p.description;
+
+    // Hide year/meta rows when empty (e.g. curatorial statement)
+    this.yearEl.textContent  = p.year || '';
+    this.yearEl.style.display = p.year ? '' : 'none';
+
+    const hasMeta = p.medium || p.dimensions;
+    this.metaEl.innerHTML   = hasMeta ? `${p.medium}${p.medium && p.dimensions ? '<br>' : ''}${p.dimensions}` : '';
+    this.metaEl.style.display = hasMeta ? '' : 'none';
+
+    // Render paragraph breaks in description (\n\n becomes spacing)
+    this.descEl.innerHTML = p.description
+      .split('\n\n')
+      .map(para => `<p style="margin-bottom:12px">${para}</p>`)
+      .join('');
+
+    // Hide zoom button for curatorial statement (no image to zoom to)
+    if (this.zoomBtn) {
+      this.zoomBtn.style.display = obj.isCuratorial ? 'none' : '';
+    }
 
     // Show enquire button if painting has a contact link
     if (this.enquireBtn) {

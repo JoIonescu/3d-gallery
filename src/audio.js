@@ -4,6 +4,8 @@
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isIOSSafari = isIOS && /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+const isAndroid = /Android/.test(navigator.userAgent);
+const isChromeMobile = (isAndroid || isIOS) && /Chrome|CriOS/.test(navigator.userAgent);
 
 export class AudioManager {
   constructor() {
@@ -27,6 +29,8 @@ export class AudioManager {
 
   start() {
     if (this.started) return;
+    // No audio on Chrome mobile — avoids lock screen player with no clean fix
+    if (isChromeMobile) return;
     this.started = true;
 
     if (isIOSSafari) {

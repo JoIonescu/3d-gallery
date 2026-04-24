@@ -12,9 +12,9 @@ const canvas   = document.getElementById('canvas');
 const isMobile  = window.matchMedia('(pointer: coarse)').matches;
 const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
 if (isLowEnd) { console.log('Low-end device detected — performance mode'); }
-const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: isMobile ? 'low-power' : 'high-performance' });
+const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(isLowEnd ? 0.75 : Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(isLowEnd ? 0.75 : Math.min(window.devicePixelRatio, 3));
 renderer.shadowMap.enabled   = false;
 renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
 renderer.toneMapping         = THREE.ACESFilmicToneMapping;
@@ -44,7 +44,7 @@ camera.lookAt(0, 1.7, 0);
 // ── Build world ───────────────────────────────────────────────────────────────
 const loadingFill = document.getElementById('loading-fill');
 loadingFill.style.width = '40%';
-const paintingObjects = buildMuseum(scene);
+const paintingObjects = buildMuseum(scene, renderer);
 buildCorridor(scene);
 loadingFill.style.width = '100%';
 

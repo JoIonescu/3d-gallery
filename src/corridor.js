@@ -54,8 +54,15 @@ export function buildCorridor(scene) {
   _doorWall(scene, w, wallMat, cx, cz - d / 2, 0);
 
   // ── Lighting ──────────────────────────────────────────────────────────────
-  // No corridor lights — the gallery's ambient light bleeds in naturally
+  // Dim ambient so visitor can see the walls and floor while walking
+  const ambient = new THREE.PointLight(0x3a2e22, 1.2, 20, 1.5);
+  ambient.position.set(cx, WALL_H * 0.7, cz);
+  scene.add(ambient);
 
+  // Warm glow at the north end — visible from start, draws visitor forward
+  const glow = new THREE.PointLight(0xfff3d0, 2.5, 8, 1.8);
+  glow.position.set(cx, WALL_H * 0.5, cz - d / 2 + 1.2);
+  scene.add(glow);
 }
 
 function _solidWall(scene, length, mat, px, pz, rotY) {
