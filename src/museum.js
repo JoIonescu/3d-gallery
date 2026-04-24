@@ -603,25 +603,54 @@ export function buildMuseum(scene, renderer) {
 }
 
 function buildCuratorialStatement(scene) {
-  // Small yellow label on wall — proximity triggers info card (like paintings)
+  // 3D stone plate on wall with small yellow text
+  // Plate sits flush on the south wall, left of the doorway
+
+  // Dark marble/stone plate
+  const plateMat = new THREE.MeshStandardMaterial({
+    color: 0x1a1814, roughness: 0.4, metalness: 0.2,
+  });
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.04), plateMat);
+  plate.position.set(-5.5, 2.1, 9.86);
+  plate.rotation.y = Math.PI;
+  scene.add(plate);
+
+  // Thin gold border around plate
+  const borderMat = new THREE.MeshStandardMaterial({ color: 0xFBD00E, roughness: 0.3, metalness: 0.6 });
+  const border = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.54, 0.02), borderMat);
+  border.position.set(-5.5, 2.1, 9.84);
+  border.rotation.y = Math.PI;
+  scene.add(border);
+
+  // Text canvas — smaller font, fits the plate
   const c = document.createElement('canvas');
   c.width = 512; c.height = 128;
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, 512, 128);
-  ctx.font = 'bold 52px Questrial, Inter, sans-serif';
+
+  // Background match plate
+  ctx.fillStyle = '#1a1814';
+  ctx.fillRect(0, 0, 512, 128);
+
+  // Text — smaller and centered
+  ctx.font = 'bold 30px Questrial, Inter, sans-serif';
   ctx.fillStyle = '#FBD00E';
-  ctx.fillText('Curatorial Statement', 20, 72);
-  ctx.fillStyle = 'rgba(251,208,14,0.45)';
-  ctx.fillRect(20, 84, 440, 1.5);
+  ctx.textAlign = 'center';
+  ctx.fillText('Curatorial Statement', 256, 52);
+
+  // Subtitle hint
+  ctx.font = '16px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(251,208,14,0.5)';
+  ctx.fillText('Approach to read', 256, 82);
 
   const tex = new THREE.CanvasTexture(c);
-  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.FrontSide });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.8), mat);
-  mesh.position.set(-5.5, 2.1, 9.88);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.44), mat);
+  mesh.position.set(-5.5, 2.1, 9.83);
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
 
-  const desc = `This body of work unfolds as a vivid exploration of inner landscapes, where identity, emotion, and perception take on organic and symbolic form. Moving fluidly across mixed media, collage, printmaking, and drawing, the artist constructs a visual language rooted in layering, intuition, and play.
+  const desc  = `This body of work unfolds as a vivid exploration of inner landscapes, where identity, emotion, and perception take on organic and symbolic form. Moving fluidly across mixed media, collage, printmaking, and drawing, the artist constructs a visual language rooted in layering, intuition, and play.
 
 Recurring motifs: eyes, botanical forms, fragmented bodies, and hybrid figures, act as anchors within a shifting terrain. They suggest awareness, growth, and transformation, while also questioning how identity is formed, observed, and expressed. Figures appear both grounded and dissolving, caught between visibility and introspection, control and spontaneity.
 
