@@ -54,14 +54,18 @@ export function buildCorridor(scene) {
   _doorWall(scene, w, wallMat, cx, cz - d / 2, 0);
 
   // ── Lighting ──────────────────────────────────────────────────────────────
-  // Dim ambient so visitor can see the walls and floor while walking
-  const ambient = new THREE.PointLight(0x3a2e22, 1.2, 20, 1.5);
-  ambient.position.set(cx, WALL_H * 0.7, cz);
+  // Ambient — enough to see walls and floor clearly while walking
+  const ambient = new THREE.AmbientLight(0x4a3828, 1.8);
   scene.add(ambient);
 
-  // Warm glow at the north end — visible from start, draws visitor forward
-  const glow = new THREE.PointLight(0xfff3d0, 2.5, 8, 1.8);
-  glow.position.set(cx, WALL_H * 0.5, cz - d / 2 + 1.2);
+  // Midway light so visitor sees they are moving through a space
+  const mid = new THREE.PointLight(0x8a6a40, 2.2, 14, 1.4);
+  mid.position.set(cx, WALL_H * 0.65, cz + 2);
+  scene.add(mid);
+
+  // Warm glow at gallery entrance — strong beacon drawing visitor forward
+  const glow = new THREE.PointLight(0xfff3d0, 4.0, 7, 1.6);
+  glow.position.set(cx, WALL_H * 0.5, cz - d / 2 + 1.0);
   scene.add(glow);
 }
 
@@ -129,22 +133,24 @@ function _rectLight(scene, cx, cz) {
 export function playIntroAnimation(camera, onComplete) {
   const startZ   = 17.2;
   const endZ     = 13.5;
-  const duration = 2200; // ms — shorter feels more responsive
-  const startTime = performance.now();
+  const duration = 2200;
 
-  // Lock player during animation
+  // Set camera to start position immediately
   camera.position.set(0, 1.7, startZ);
-  camera.lookAt(0, 1.7, 0);
+  camera.lookAt(0, 1.65, 0);
+
+  let startTime = null; // set on first tick to avoid counting setup time
 
   function tick(now) {
+    // Capture start time on very first frame — avoids counting enterGallery setup time
+    if (startTime === null) { startTime = now; }
+
     const elapsed  = now - startTime;
     const t        = Math.min(elapsed / duration, 1);
-    const eased    = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease in-out
+    const eased    = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
     camera.position.z = startZ + (endZ - startZ) * eased;
-
-    // Subtle upward tilt as you approach the light
-    camera.position.y = 1.7 + Math.sin(eased * Math.PI * 0.5) * 0.08;
+    camera.position.y = 1.7 + Math.sin(eased * Math.PI * 0.5) * 0.06;
     camera.lookAt(0, 1.65, 0);
 
     if (t < 1) {

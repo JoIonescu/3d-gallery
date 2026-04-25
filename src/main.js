@@ -24,18 +24,19 @@ renderer.toneMapping         = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 function onResize() {
-  // Use visualViewport on iOS for correct size excluding browser chrome
-  const vv = window.visualViewport;
-  const w  = vv ? Math.round(vv.width)  : window.innerWidth;
-  const h  = vv ? Math.round(vv.height) : window.innerHeight;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', h + 'px');
   renderer.setSize(w, h);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', onResize);
-window.addEventListener('orientationchange', () => setTimeout(onResize, 300));
+window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', onResize);
+  window.visualViewport.addEventListener('resize', () => {
+    setTimeout(onResize, 50);
+  });
 }
 
 // ── Scene & Camera ────────────────────────────────────────────────────────────
@@ -158,14 +159,10 @@ function enterGallery() {
     // Start audio after a delay so it doesn't block the first render frames
     setTimeout(() => audio.start(), 800);
 
-    // Wait 2 frames before starting animation so renderer is warm
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        playIntroAnimation(camera, () => {
-          player.locked = false;
-          document.documentElement.requestPointerLock().catch(() => {});
-        });
-      });
+    // Start animation immediately — startTime captured inside first tick
+    playIntroAnimation(camera, () => {
+      player.locked = false;
+      document.documentElement.requestPointerLock().catch(() => {});
     });
   } else {
     audio.start();
