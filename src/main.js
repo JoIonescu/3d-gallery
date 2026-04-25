@@ -10,7 +10,8 @@ import { Minimap } from './minimap.js';
 // ── Renderer ─────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('canvas');
 const isMobile  = window.matchMedia('(pointer: coarse)').matches;
-const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
+const isIOS_dev = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isLowEnd  = !isIOS_dev && isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
 if (isLowEnd) { console.log('Low-end device detected — performance mode'); }
 const renderer  = new THREE.WebGLRenderer({ canvas, antialias: !isLowEnd, powerPreference: 'high-performance' });
 const vv = window.visualViewport;

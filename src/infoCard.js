@@ -33,7 +33,6 @@ export class InfoCard {
     });
 
     if (this.arBtn) {
-      this.arBtn.style.display = 'block';
       this.arBtn.addEventListener('click', () => {
         if (this.current) openAR(this.current);
       });
@@ -110,6 +109,9 @@ export class InfoCard {
     // Hide zoom button for curatorial statement (no image to zoom to)
     if (this.zoomBtn) {
       this.zoomBtn.style.display = obj.isCuratorial ? 'none' : '';
+    }
+    if (this.arBtn) {
+      this.arBtn.style.display = obj.isCuratorial ? 'none' : 'block';
     }
 
     // Show enquire button if painting has a contact link
