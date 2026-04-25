@@ -12,8 +12,11 @@ const canvas   = document.getElementById('canvas');
 const isMobile  = window.matchMedia('(pointer: coarse)').matches;
 const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
 if (isLowEnd) { console.log('Low-end device detected — performance mode'); }
-const renderer  = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-renderer.setSize(window.innerWidth, window.innerHeight);
+const renderer  = new THREE.WebGLRenderer({ canvas, antialias: !isLowEnd, powerPreference: 'high-performance' });
+const vv = window.visualViewport;
+const vw = vv ? Math.round(vv.width)  : window.innerWidth;
+const vh = vv ? Math.round(vv.height) : window.innerHeight;
+renderer.setSize(vw, vh);
 renderer.setPixelRatio(isLowEnd ? 0.75 : Math.min(window.devicePixelRatio, 3));
 renderer.shadowMap.enabled   = false;
 renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
@@ -119,15 +122,21 @@ setTimeout(() => {
 function enterGallery() {
   enterEl.classList.remove('show');
   enterEl.style.display = 'none';
-  audioBtn.classList.add('show');
   galleryActive = true;
   lastTime = performance.now();
-  audio.start();
   minimap.show();
-  // Only show joystick on iOS — Android uses touch-look
+
+  // Only show audio button on desktop and iOS Safari
+  const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const _isIOSSafari = _isIOS && /^((?!chrome|android|crios|fxios|gsa).)*safari/i.test(navigator.userAgent);
+  const _isMobile = _isIOS || /Android/.test(navigator.userAgent);
+  if (!_isMobile || _isIOSSafari) audioBtn.classList.add('show');
+
+  // Only show joystick on iOS
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   if (isIOS) document.getElementById('joystick-zone').classList.add('active');
-  // Show movement hint on mobile, fade after 4s or first movement
+
+  // Mobile movement hint
   if (window.matchMedia('(pointer: coarse)').matches) {
     const hint = document.getElementById('move-hint');
     if (hint) {
@@ -144,12 +153,22 @@ function enterGallery() {
 
   if (!introPlayed) {
     introPlayed = true;
-    player.locked = true; // freeze player during intro
-    playIntroAnimation(camera, () => {
-      player.locked = false;
-      document.documentElement.requestPointerLock().catch(() => {});
+    player.locked = true;
+
+    // Start audio after a delay so it doesn't block the first render frames
+    setTimeout(() => audio.start(), 800);
+
+    // Wait 2 frames before starting animation so renderer is warm
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        playIntroAnimation(camera, () => {
+          player.locked = false;
+          document.documentElement.requestPointerLock().catch(() => {});
+        });
+      });
     });
   } else {
+    audio.start();
     document.documentElement.requestPointerLock().catch(() => {});
   }
 }
