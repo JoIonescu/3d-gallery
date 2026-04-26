@@ -214,15 +214,7 @@
     @media (pointer: coarse) { #hint { display: none; } }
 
     /* ── Nav arrows (mobile) ── */
-    #nav-arrows {
-      position: absolute; bottom: 32px; left: 50%;
-      transform: translateX(-50%);
-      display: none;
-      grid-template-columns: repeat(3, 52px);
-      grid-template-rows: repeat(2, 52px);
-      gap: 5px;
-    }
-    @media (pointer: coarse) { #nav-arrows { display: grid; } }
+    #nav-arrows { display: none !important; }
     .nav-btn {
       width: 52px; height: 52px;
       background: rgba(0,0,0,0.5);
@@ -240,16 +232,7 @@
     [data-dir="right"] { grid-column: 3; grid-row: 2; }
 
     /* ── Joystick ── */
-    #joystick-zone {
-      position: absolute; right: 0; top: 0;
-      width: 50%; height: 100%;
-      display: none;
-      z-index: 20;
-    }
-    #joystick-zone.active { display: block; }
-    @media (pointer: coarse) {
-      #nav-arrows { display: none; }
-    }
+    #joystick-zone { display: none !important; }
 
     /* ── Info card ── */
     #info-card {
@@ -405,7 +388,7 @@
       <div class="enter-rule"></div>
       <div class="enter-bio">Hanna is a mixed media artist working through layers of material, memory, and emotion. Her practice moves between collage, illustration, and experimental composition, bringing together textures and fragments that echo the complexity of inner landscapes.<br><br>Each work unfolds as a quiet negotiation between control and intuition. Found elements, drawn forms, and subtle interventions merge into images that feel both intimate and open-ended, resisting fixed meaning.<br><br>Rather than offering clear narratives, Hanna creates spaces for reflection, where the familiar becomes slightly altered, and small details carry unexpected weight. What emerges is a body of work that invites slow looking, encouraging viewers to trace connections, pauses, and transformations within and beyond the frame.</div>
       <button class="enter-btn" id="enter-btn">Enter the exhibition</button>
-      <div class="enter-hint">Click and drag to look around</div>
+      <div class="enter-hint">Drag to look · Click to walk · Scroll to move</div>
       <a class="enter-ig" href="https://www.instagram.com/imagohanna" target="_blank">@imagohanna</a>
     </div>
   </div>
@@ -454,9 +437,7 @@
   <div id="toast"></div>
 
   <div id="hint">
-    WASD &nbsp; Move<br>
-    Mouse &nbsp; Look<br>
-    Approach a painting for info
+Drag to look · Click floor to walk · Scroll to move forward
   </div>
 
   <div id="nav-arrows">

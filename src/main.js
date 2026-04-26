@@ -4,15 +4,15 @@ import { buildCorridor, playIntroAnimation } from './corridor.js';
 import { Player }               from './player.js';
 import { InfoCard, findNearest } from './infoCard.js';
 import { AudioManager }         from './audio.js';
+import { Minimap }              from './minimap.js';
 import { ROOM_ZONES, PLAYER_START } from './config.js';
-import { Minimap } from './minimap.js';
 
-// ── Renderer ─────────────────────────────────────────────────────────────────
+// ── Renderer ──────────────────────────────────────────────────────────────────
 const canvas   = document.getElementById('canvas');
-const isMobile  = window.matchMedia('(pointer: coarse)').matches;
-const isLowEnd  = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
-if (isLowEnd) { console.log('Low-end device detected — performance mode'); }
-const renderer  = new THREE.WebGLRenderer({ canvas, antialias: !isLowEnd, powerPreference: 'high-performance' });
+const isMobile = window.matchMedia('(pointer: coarse)').matches;
+const isLowEnd = isMobile && (navigator.hardwareConcurrency <= 4 || /Redmi|Techno|Samsung.*SM-A|Moto|Nokia/i.test(navigator.userAgent));
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isLowEnd, powerPreference: 'high-performance' });
 const vv = window.visualViewport;
 const vw = vv ? Math.round(vv.width)  : window.innerWidth;
 const vh = vv ? Math.round(vv.height) : window.innerHeight;
@@ -34,9 +34,7 @@ function onResize() {
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(onResize, 200));
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => {
-    setTimeout(onResize, 50);
-  });
+  window.visualViewport.addEventListener('resize', () => setTimeout(onResize, 50));
 }
 
 // ── Scene & Camera ────────────────────────────────────────────────────────────
@@ -46,30 +44,114 @@ camera.position.set(PLAYER_START.x, PLAYER_START.y, PLAYER_START.z);
 camera.lookAt(0, 1.7, 0);
 
 // ── Build world ───────────────────────────────────────────────────────────────
-const loadingFill = document.getElementById('loading-fill');
+const loadingFill    = document.getElementById('loading-fill');
 loadingFill.style.width = '40%';
 const paintingObjects = buildMuseum(scene, renderer);
 buildCorridor(scene);
 loadingFill.style.width = '100%';
 
+// Collect floor meshes for raycasting
+const floorMeshes = [];
+scene.traverse((obj) => {
+  if (obj.isMesh && obj.rotation.x === -Math.PI / 2) {
+    floorMeshes.push(obj);
+  }
+});
+
 // ── Modules ───────────────────────────────────────────────────────────────────
 const player   = new Player(camera);
 const infoCard = new InfoCard(player);
+const audio    = new AudioManager();
+const minimap  = new Minimap();
+
 window.__exitZoom = () => {
   player.exitZoom();
   const btn = document.getElementById('zoom-exit-mobile');
   if (btn) btn.classList.remove('show');
 };
-const audio    = new AudioManager();
-const minimap  = new Minimap();
+
+// ── Raycaster for click-to-walk and click-on-painting ────────────────────────
+const raycaster = new THREE.Raycaster();
+const mouse     = new THREE.Vector2();
+
+function getCanvasXY(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return new THREE.Vector2(
+    ((clientX - rect.left) / rect.width)  *  2 - 1,
+    ((clientY - rect.top)  / rect.height) * -2 + 1
+  );
+}
+
+function handleClick(clientX, clientY) {
+  if (player.locked || player.isZoomed) return;
+  if (player._lastClickWasDrag || player._lastTouchWasSwipe) return;
+
+  const m = getCanvasXY(clientX, clientY);
+  raycaster.setFromCamera(m, camera);
+
+  // 1. Check painting frames first — click painting opens info card
+  const paintingMeshes = paintingObjects.map(o => o.mesh).filter(m => m.children);
+  const paintingHits = raycaster.intersectObjects(paintingMeshes, true);
+  if (paintingHits.length > 0) {
+    // Find which painting was hit
+    let hitObj = null;
+    for (const p of paintingObjects) {
+      if (raycaster.intersectObject(p.mesh, true).length > 0) {
+        hitObj = p;
+        break;
+      }
+    }
+    if (hitObj && !hitObj.isCuratorial) {
+      infoCard._show(hitObj);
+      return;
+    }
+  }
+
+  // 2. Check floor — click floor to walk there
+  const floorHits = raycaster.intersectObjects(floorMeshes);
+  if (floorHits.length > 0) {
+    const hit = floorHits[0].point;
+    hit.y = 1.7;
+    player.walkTo(hit);
+    showWalkIndicator(floorHits[0].point);
+  }
+}
+
+// Walk indicator — small circle on floor where you clicked
+function showWalkIndicator(point) {
+  let ind = scene.getObjectByName('walkIndicator');
+  if (!ind) {
+    const geo = new THREE.RingGeometry(0.12, 0.18, 24);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.55, transparent: true, side: THREE.DoubleSide });
+    ind = new THREE.Mesh(geo, mat);
+    ind.name = 'walkIndicator';
+    ind.rotation.x = -Math.PI / 2;
+    scene.add(ind);
+  }
+  ind.position.set(point.x, 0.02, point.z);
+  ind.material.opacity = 0.55;
+  clearTimeout(ind._fade);
+  ind._fade = setTimeout(() => {
+    if (ind.material) ind.material.opacity = 0;
+  }, 600);
+}
+
+canvas.addEventListener('click', (e) => {
+  handleClick(e.clientX, e.clientY);
+});
+
+canvas.addEventListener('touchend', (e) => {
+  if (e.changedTouches.length === 1) {
+    const t = e.changedTouches[0];
+    handleClick(t.clientX, t.clientY);
+  }
+}, { passive: true });
 
 // ── iOS Safari AR tooltip ─────────────────────────────────────────────────────
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
 function isSafari() { return /^((?!chrome|android).)*safari/i.test(navigator.userAgent); }
 
 if (isIOS() && !isSafari()) {
-  // Patch the AR button to show tooltip instead of launching AR
-  document.addEventListener('DOMContentLoaded', () => {}, { once: true });
   const origBtn = document.getElementById('ic-ar');
   if (origBtn) {
     origBtn.addEventListener('click', (e) => {
@@ -84,18 +166,7 @@ function showToast(msg) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'toast';
-    el.style.cssText = [
-      'position:fixed', 'bottom:32px', 'left:50%',
-      'transform:translateX(-50%)',
-      'background:rgba(10,10,10,0.92)',
-      'border:0.5px solid rgba(255,255,255,0.15)',
-      'color:rgba(255,255,255,0.8)',
-      'font-size:12px', 'letter-spacing:0.1em',
-      'padding:13px 22px', 'z-index:999',
-      'pointer-events:none',
-      'transition:opacity 0.4s ease',
-      'white-space:nowrap',
-    ].join(';');
+    el.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(10,10,10,0.92);border:0.5px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);font-size:12px;letter-spacing:0.1em;padding:13px 22px;z-index:999;pointer-events:none;transition:opacity 0.4s ease;white-space:nowrap;opacity:0;';
     document.body.appendChild(el);
   }
   el.textContent = msg;
@@ -127,26 +198,18 @@ function enterGallery() {
   lastTime = performance.now();
   minimap.show();
 
-  // Only show audio button on desktop and iOS Safari
+  // Show audio button only on desktop and iOS Safari
   const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const _isIOSSafari = _isIOS && /^((?!chrome|android|crios|fxios|gsa).)*safari/i.test(navigator.userAgent);
   const _isMobile = _isIOS || /Android/.test(navigator.userAgent);
   if (!_isMobile || _isIOSSafari) audioBtn.classList.add('show');
 
-  // Only show joystick on iOS
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  if (isIOS) document.getElementById('joystick-zone').classList.add('active');
-
   // Mobile movement hint
-  if (window.matchMedia('(pointer: coarse)').matches) {
+  if (isMobile) {
     const hint = document.getElementById('move-hint');
     if (hint) {
       setTimeout(() => hint.classList.add('show'), 800);
-      const fadeHint = () => {
-        hint.classList.remove('show');
-        hint.classList.add('fade');
-        window.removeEventListener('touchmove', fadeHint);
-      };
+      const fadeHint = () => { hint.classList.remove('show'); hint.classList.add('fade'); };
       setTimeout(fadeHint, 5000);
       window.addEventListener('touchmove', fadeHint, { once: true });
     }
@@ -155,18 +218,12 @@ function enterGallery() {
   if (!introPlayed) {
     introPlayed = true;
     player.locked = true;
-
-    // Start audio after a delay so it doesn't block the first render frames
     setTimeout(() => audio.start(), 800);
-
-    // Start animation immediately — startTime captured inside first tick
     playIntroAnimation(camera, () => {
       player.locked = false;
-      document.documentElement.requestPointerLock().catch(() => {});
     });
   } else {
     audio.start();
-    document.documentElement.requestPointerLock().catch(() => {});
   }
 }
 
@@ -190,7 +247,7 @@ function updateRoomLabel(x, z) {
 }
 
 // ── Render loop ───────────────────────────────────────────────────────────────
-let lastTime  = performance.now();
+let lastTime      = performance.now();
 let galleryActive = false;
 
 function animate(now) {
@@ -213,7 +270,6 @@ function animate(now) {
     renderer.toneMappingExposure += (targetExp - renderer.toneMappingExposure) * 0.03;
   }
 
-  // Render only after gallery entered (prevents corridor flash on load)
   if (galleryActive) renderer.render(scene, camera);
 }
 
