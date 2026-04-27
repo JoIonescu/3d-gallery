@@ -206,48 +206,25 @@ function buildWallSection(length, mat, withDoor = false) {
   const g = new THREE.Group();
 
   if (!withDoor) {
-    // Upper wall (above dado rail)
-    const upperH = WALL_H - DADO_H - DADO_RAIL - CROWN_H;
-    const upper  = new THREE.Mesh(new THREE.PlaneGeometry(length, upperH), mat.wall);
-    upper.position.set(0, DADO_H + DADO_RAIL + upperH / 2, 0);
-    upper.receiveShadow = true;
-    g.add(upper);
-
-    // Lower dado panel
-    const dado = new THREE.Mesh(new THREE.PlaneGeometry(length, DADO_H), mat.dado);
-    dado.position.set(0, DADO_H / 2, 0);
-    dado.receiveShadow = true;
-    g.add(dado);
+    // Single colour wall — full height, no dado, no horizontal line
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(length, WALL_H), mat.wall);
+    wall.position.set(0, WALL_H / 2, 0);
+    wall.receiveShadow = true;
+    g.add(wall);
   } else {
-    // Door wall — panels on sides, top panel above door
     const lW   = (length - DOOR_W) / 2;
     const topH = WALL_H - DOOR_H;
 
     if (lW > 0.01) {
-      // Left panels
-      const leftUpper = new THREE.Mesh(
-        new THREE.PlaneGeometry(lW, WALL_H - DADO_H - DADO_RAIL - CROWN_H), mat.wall
-      );
-      leftUpper.position.set(-(DOOR_W / 2 + lW / 2), DADO_H + DADO_RAIL + (WALL_H - DADO_H - DADO_RAIL - CROWN_H) / 2, 0);
-      g.add(leftUpper);
+      const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(lW, WALL_H), mat.wall);
+      leftWall.position.set(-(DOOR_W / 2 + lW / 2), WALL_H / 2, 0);
+      g.add(leftWall);
 
-      const leftDado = new THREE.Mesh(new THREE.PlaneGeometry(lW, DADO_H), mat.dado);
-      leftDado.position.set(-(DOOR_W / 2 + lW / 2), DADO_H / 2, 0);
-      g.add(leftDado);
-
-      // Right panels
-      const rightUpper = new THREE.Mesh(
-        new THREE.PlaneGeometry(lW, WALL_H - DADO_H - DADO_RAIL - CROWN_H), mat.wall
-      );
-      rightUpper.position.set(DOOR_W / 2 + lW / 2, DADO_H + DADO_RAIL + (WALL_H - DADO_H - DADO_RAIL - CROWN_H) / 2, 0);
-      g.add(rightUpper);
-
-      const rightDado = new THREE.Mesh(new THREE.PlaneGeometry(lW, DADO_H), mat.dado);
-      rightDado.position.set(DOOR_W / 2 + lW / 2, DADO_H / 2, 0);
-      g.add(rightDado);
+      const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(lW, WALL_H), mat.wall);
+      rightWall.position.set(DOOR_W / 2 + lW / 2, WALL_H / 2, 0);
+      g.add(rightWall);
     }
 
-    // Top panel above door
     if (topH > 0.01) {
       const top = new THREE.Mesh(new THREE.PlaneGeometry(DOOR_W, topH), mat.wall);
       top.position.set(0, DOOR_H + topH / 2, 0);
@@ -256,26 +233,26 @@ function buildWallSection(length, mat, withDoor = false) {
 
     // Door tunnel depth
     const DEPTH = 0.32;
-    const leftT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, DOOR_H), mat.dado);
+    const leftT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, DOOR_H), mat.wall);
     leftT.rotation.y = Math.PI / 2;
     leftT.position.set(-DOOR_W / 2, DOOR_H / 2, -DEPTH / 2);
     g.add(leftT);
 
-    const rightT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, DOOR_H), mat.dado);
+    const rightT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, DOOR_H), mat.wall);
     rightT.rotation.y = -Math.PI / 2;
     rightT.position.set(DOOR_W / 2, DOOR_H / 2, -DEPTH / 2);
     g.add(rightT);
 
-    const topT = new THREE.Mesh(new THREE.PlaneGeometry(DOOR_W, DEPTH), mat.dado);
+    const topT = new THREE.Mesh(new THREE.PlaneGeometry(DOOR_W, DEPTH), mat.wall);
     topT.rotation.x = Math.PI / 2;
     topT.position.set(0, DOOR_H, -DEPTH / 2);
     g.add(topT);
 
     // Door architrave
     const archDefs = [
-      { w: 0.055, h: DOOR_H,                x: -(DOOR_W / 2 + 0.028), y: DOOR_H / 2 },
-      { w: 0.055, h: DOOR_H,                x:  (DOOR_W / 2 + 0.028), y: DOOR_H / 2 },
-      { w: DOOR_W + 0.11, h: 0.055,         x: 0,                     y: DOOR_H + 0.028 },
+      { w: 0.055, h: DOOR_H,        x: -(DOOR_W / 2 + 0.028), y: DOOR_H / 2 },
+      { w: 0.055, h: DOOR_H,        x:  (DOOR_W / 2 + 0.028), y: DOOR_H / 2 },
+      { w: DOOR_W + 0.11, h: 0.055, x: 0,                     y: DOOR_H + 0.028 },
     ];
     for (const s of archDefs) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(s.w, s.h, 0.04), mat.molding);
@@ -284,34 +261,16 @@ function buildWallSection(length, mat, withDoor = false) {
     }
   }
 
+  // Crown molding only — no dado rail, no skirting
   if (!withDoor) {
-    // Full-length dado rail, skirting, crown on solid walls
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(length, DADO_RAIL, 0.06), mat.dado_rail);
-    rail.position.set(0, DADO_H + DADO_RAIL / 2, 0.03);
-    g.add(rail);
-
-    const skirt = new THREE.Mesh(new THREE.BoxGeometry(length, 0.12, 0.05), mat.skirting);
-    skirt.position.set(0, 0.06, 0.025);
-    g.add(skirt);
-
     const crown = new THREE.Mesh(new THREE.BoxGeometry(length, CROWN_H, 0.07), mat.molding);
     crown.position.set(0, WALL_H - CROWN_H / 2, 0.035);
     g.add(crown);
   } else {
-    // Door walls — rails and moldings only on side panels, not across door opening
     const lW = (length - DOOR_W) / 2;
     if (lW > 0.01) {
       for (const side of [-1, 1]) {
         const sx = side * (DOOR_W / 2 + lW / 2);
-
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(lW, DADO_RAIL, 0.06), mat.dado_rail);
-        rail.position.set(sx, DADO_H + DADO_RAIL / 2, 0.03);
-        g.add(rail);
-
-        const skirt = new THREE.Mesh(new THREE.BoxGeometry(lW, 0.12, 0.05), mat.skirting);
-        skirt.position.set(sx, 0.06, 0.025);
-        g.add(skirt);
-
         const crown = new THREE.Mesh(new THREE.BoxGeometry(lW, CROWN_H, 0.07), mat.molding);
         crown.position.set(sx, WALL_H - CROWN_H / 2, 0.035);
         g.add(crown);
