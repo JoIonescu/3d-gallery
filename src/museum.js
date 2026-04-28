@@ -183,7 +183,8 @@ function getMaterials() {
 
   matLib = {
     floor  : new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.04, metalness: 0.12, envMapIntensity: 2.0 }),
-    ceiling: new THREE.MeshStandardMaterial({ map: cofferTex, roughness: 0.98, metalness: 0.0  }),
+    // FIX 1: ceiling opacity reduced from default (1.0) to 0.15 — artist request
+    ceiling: new THREE.MeshStandardMaterial({ map: cofferTex, roughness: 0.98, metalness: 0.0, transparent: true, opacity: 0.15 }),
     wall   : new THREE.MeshStandardMaterial({ map: wallTex,   roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide }),
     dado   : new THREE.MeshStandardMaterial({ map: dadoTex,   roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide }),
     frame  : new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.35, metalness: 0.45 }),
@@ -548,13 +549,15 @@ function buildPainting(scene, painting, mat) {
     }
   }, undefined, () => {});
 
-  // Spotlight on painting — warm, focused
+  // FIX 3: Painting spotlight — wider wash angle, light pulled further back and higher
+  // Was: multiplyScalar(0.5), +1.4 height, Math.PI / 3 angle (60°)
+  // Now: multiplyScalar(0.8), +1.6 height, Math.PI / 2.2 angle (~82°)
   const fwd  = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(0, rotY, 0));
   const lPos = new THREE.Vector3(...pos)
-    .add(fwd.clone().multiplyScalar(0.5))
-    .add(new THREE.Vector3(0, 1.4, 0));
+    .add(fwd.clone().multiplyScalar(0.8))
+    .add(new THREE.Vector3(0, 1.6, 0));
 
-  const spot = new THREE.SpotLight(0xfff8f0, isMobile ? 3.0 : 4.5, 6, Math.PI / 3, 1.0, 1.5);
+  const spot = new THREE.SpotLight(0xfff8f0, isMobile ? 3.0 : 4.5, 6, Math.PI / 2.2, 1.0, 1.5);
   spot.position.copy(lPos);
   const target = new THREE.Object3D();
   target.position.set(...pos);
@@ -596,18 +599,23 @@ export function buildMuseum(scene, renderer) {
   addLighting(scene);
   for (const room of ROOMS) buildRoom(scene, room, mat);
   for (const p of PAINTINGS) buildPainting(scene, p, mat);
-  buildCuratorialStatement(scene);
+  // FIX 2: pass mat so curatorial plate gets marble texture
+  buildCuratorialStatement(scene, mat);
 
   return paintingObjects;
 }
 
-function buildCuratorialStatement(scene) {
-  // 3D stone plate on wall with small yellow text
+// FIX 2: accept mat parameter — plate now uses marble texture from mat.floor
+function buildCuratorialStatement(scene, mat) {
+  // 3D marble plate on wall with small yellow text
   // Plate sits flush on the south wall, left of the doorway
 
-  // Dark marble/stone plate
+  // FIX 2: marble/stone plate — reuses existing marble texture, no extra memory
   const plateMat = new THREE.MeshStandardMaterial({
-    color: 0x1a1814, roughness: 0.4, metalness: 0.2,
+    map: mat.floor.map,
+    color: 0x2a2420,
+    roughness: 0.25,
+    metalness: 0.15,
   });
   const plate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.04), plateMat);
   plate.position.set(-5.5, 2.1, 9.86);
@@ -627,8 +635,8 @@ function buildCuratorialStatement(scene) {
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, 512, 128);
 
-  // Background match plate
-  ctx.fillStyle = '#1a1814';
+  // Transparent background so marble shows through text area
+  ctx.fillStyle = 'rgba(0,0,0,0)';
   ctx.fillRect(0, 0, 512, 128);
 
   // Text — smaller and centered
@@ -643,8 +651,8 @@ function buildCuratorialStatement(scene) {
   ctx.fillText('Approach to read', 256, 82);
 
   const tex = new THREE.CanvasTexture(c);
-  const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.44), mat);
+  const textMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.44), textMat);
   mesh.position.set(-5.5, 2.1, 9.83);
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
