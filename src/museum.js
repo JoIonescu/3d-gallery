@@ -7,8 +7,6 @@ const isMobile = window.matchMedia('(pointer: coarse)').matches;
 // ── Texture generators ────────────────────────────────────────────────────────
 
 function makeMarbleTexture() {
-  // Sine + turbulence marble — based on classic procedural technique
-  // Produces realistic flowing veins with natural turbulence
   const size = isMobile ? 256 : 512;
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
@@ -16,7 +14,6 @@ function makeMarbleTexture() {
   const img = ctx.createImageData(size, size);
   const d   = img.data;
 
-  // Smooth noise via value noise with bilinear interpolation
   const NW = 64;
   const noise = new Float32Array(NW * NW);
   for (let i = 0; i < noise.length; i++) noise[i] = Math.random();
@@ -35,51 +32,37 @@ function makeMarbleTexture() {
     return n00*(1-ux)*(1-uy) + n10*ux*(1-uy) + n01*(1-ux)*uy + n11*ux*uy;
   }
 
-  // Turbulence = sum of noise at multiple frequencies
   function turbulence(x, y, initialSize) {
-    let val  = 0;
-    let sz   = initialSize;
-    while (sz >= 1) {
-      val += smoothNoise(x / sz, y / sz) * sz;
-      sz  /= 2;
-    }
+    let val = 0, sz = initialSize;
+    while (sz >= 1) { val += smoothNoise(x / sz, y / sz) * sz; sz /= 2; }
     return val / initialSize;
   }
 
-  // Marble colour palette — warm Carrara white/grey
   const palette = [
-    [247, 244, 239], // near white
-    [230, 225, 215], // warm grey
-    [215, 208, 196], // mid grey
-    [200, 192, 180], // darker vein
-    [235, 230, 222], // light transition
+    [247, 244, 239],
+    [230, 225, 215],
+    [215, 208, 196],
+    [200, 192, 180],
+    [235, 230, 222],
   ];
 
-  const xPeriod = 4.0;   // vein frequency X
-  const yPeriod = 8.0;   // vein frequency Y
-  const turbPow = 4.5;   // turbulence strength
-  const turbSz  = size / 4;
+  const xPeriod = 4.0, yPeriod = 8.0, turbPow = 4.5, turbSz = size / 4;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const turb = turbulence(x, y, turbSz);
-      const xyVal = (x * xPeriod / size) + (y * yPeriod / size) + turbPow * turb;
-      // abs(sin) creates sharp veins, smoothed with cos blend
+      const turb    = turbulence(x, y, turbSz);
+      const xyVal   = (x * xPeriod / size) + (y * yPeriod / size) + turbPow * turb;
       const sineVal = Math.abs(Math.sin(xyVal * Math.PI));
-
-      // Map sine to palette
       const t   = sineVal;
       const idx = Math.floor(t * (palette.length - 1));
       const f   = t * (palette.length - 1) - idx;
       const c0  = palette[Math.min(idx,     palette.length-1)];
       const c1  = palette[Math.min(idx + 1, palette.length-1)];
-
       const r = Math.round(c0[0] * (1-f) + c1[0] * f);
       const g = Math.round(c0[1] * (1-f) + c1[1] * f);
       const b = Math.round(c0[2] * (1-f) + c1[2] * f);
-
       const i = (y * size + x) * 4;
-      d[i]   = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
+      d[i] = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
     }
   }
 
@@ -89,20 +72,88 @@ function makeMarbleTexture() {
   return tex;
 }
 
+// Dark Marquina-style marble — near-black base, white/gold veins
+function makeDarkMarbleTexture() {
+  const size = 256;
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(size, size);
+  const d   = img.data;
+
+  const NW = 64;
+  const noise = new Float32Array(NW * NW);
+  for (let i = 0; i < noise.length; i++) noise[i] = Math.random();
+
+  function smoothNoise(x, y) {
+    const ix = Math.floor(x) & (NW - 1);
+    const iy = Math.floor(y) & (NW - 1);
+    const fx = x - Math.floor(x);
+    const fy = y - Math.floor(y);
+    const ux = fx * fx * (3 - 2 * fx);
+    const uy = fy * fy * (3 - 2 * fy);
+    const n00 = noise[iy       * NW + ix];
+    const n10 = noise[iy       * NW + ((ix+1) & (NW-1))];
+    const n01 = noise[((iy+1) & (NW-1)) * NW + ix];
+    const n11 = noise[((iy+1) & (NW-1)) * NW + ((ix+1) & (NW-1))];
+    return n00*(1-ux)*(1-uy) + n10*ux*(1-uy) + n01*(1-ux)*uy + n11*ux*uy;
+  }
+
+  function turbulence(x, y, initialSize) {
+    let val = 0, sz = initialSize;
+    while (sz >= 1) { val += smoothNoise(x / sz, y / sz) * sz; sz /= 2; }
+    return val / initialSize;
+  }
+
+  // Near-black base with warm white/gold veins — Nero Marquina style
+  const palette = [
+    [10,  8,  6],
+    [18, 14, 10],
+    [32, 26, 18],
+    [70, 58, 40],
+    [140, 120, 85],
+    [195, 178, 140],
+  ];
+
+  const xPeriod = 6.0, yPeriod = 10.0, turbPow = 5.5, turbSz = size / 4;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const turb    = turbulence(x, y, turbSz);
+      const xyVal   = (x * xPeriod / size) + (y * yPeriod / size) + turbPow * turb;
+      const sineVal = Math.abs(Math.sin(xyVal * Math.PI));
+      const t   = sineVal;
+      const idx = Math.floor(t * (palette.length - 1));
+      const f   = t * (palette.length - 1) - idx;
+      const c0  = palette[Math.min(idx,     palette.length-1)];
+      const c1  = palette[Math.min(idx + 1, palette.length-1)];
+      const r = Math.round(c0[0] * (1-f) + c1[0] * f);
+      const g = Math.round(c0[1] * (1-f) + c1[1] * f);
+      const b = Math.round(c0[2] * (1-f) + c1[2] * f);
+      const i = (y * size + x) * 4;
+      d[i] = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+// Pure white wall — no warmth, minimal grain
 function makeWallTexture() {
-  // Solid #F7F9FC — clean gallery white, very subtle grain only
   const c = document.createElement('canvas');
   c.width = 256; c.height = 256;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#F7F9FC';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, 256, 256);
-  // Barely-there grain so it doesn't look like flat CSS
   const img = ctx.getImageData(0, 0, 256, 256);
   for (let i = 0; i < img.data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 3;
-    img.data[i]   = Math.min(255, Math.max(240, img.data[i]   + n));
-    img.data[i+1] = Math.min(255, Math.max(243, img.data[i+1] + n));
-    img.data[i+2] = Math.min(255, Math.max(248, img.data[i+2] + n));
+    const n = (Math.random() - 0.5) * 2;
+    img.data[i]   = Math.min(255, Math.max(253, img.data[i]   + n));
+    img.data[i+1] = Math.min(255, Math.max(253, img.data[i+1] + n));
+    img.data[i+2] = Math.min(255, Math.max(254, img.data[i+2] + n));
   }
   ctx.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(c);
@@ -111,7 +162,6 @@ function makeWallTexture() {
 }
 
 function makeDadoTexture() {
-  // Slightly darker / more matte for the lower wall panel
   const c = document.createElement('canvas');
   c.width = 256; c.height = 256;
   const ctx = c.getContext('2d');
@@ -130,18 +180,16 @@ function makeDadoTexture() {
   return tex;
 }
 
+// Near-white ceiling — very faint coffer lines, light base
 function makeCofferTexture(size) {
-  // Coffered ceiling — recessed grid
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#f7f4ef';
+  ctx.fillStyle = '#f9f8f6';
   ctx.fillRect(0, 0, size, size);
 
-  const cell = size / 4;
+  const cell   = size / 4;
   const border = size / 32;
-  ctx.strokeStyle = 'rgba(180,175,165,0.5)';
-  ctx.lineWidth   = border;
 
   for (let r = 0; r < 4; r++) {
     for (let col = 0; col < 4; col++) {
@@ -149,13 +197,12 @@ function makeCofferTexture(size) {
       const y = r   * cell + border * 1.5;
       const w = cell - border * 3;
       const h = cell - border * 3;
+      ctx.strokeStyle = 'rgba(185,180,172,0.18)';
+      ctx.lineWidth   = border;
       ctx.strokeRect(x, y, w, h);
-      // Inner recess shadow
-      ctx.strokeStyle = 'rgba(140,135,128,0.2)';
-      ctx.lineWidth = border * 0.5;
+      ctx.strokeStyle = 'rgba(165,160,152,0.08)';
+      ctx.lineWidth   = border * 0.5;
       ctx.strokeRect(x + border, y + border, w - border * 2, h - border * 2);
-      ctx.strokeStyle = 'rgba(180,175,165,0.5)';
-      ctx.lineWidth = border;
     }
   }
   const tex = new THREE.CanvasTexture(c);
@@ -172,6 +219,9 @@ function getMaterials() {
   const marbleTex = makeMarbleTexture();
   marbleTex.repeat.set(3, 3);
 
+  const darkMarbleTex = makeDarkMarbleTexture();
+  darkMarbleTex.repeat.set(2, 1);
+
   const wallTex = makeWallTexture();
   wallTex.repeat.set(3, 1.5);
 
@@ -182,32 +232,44 @@ function getMaterials() {
   cofferTex.repeat.set(3, 3);
 
   matLib = {
-    floor  : new THREE.MeshStandardMaterial({ map: marbleTex, roughness: 0.04, metalness: 0.12, envMapIntensity: 2.0 }),
-    // FIX 1: ceiling opacity reduced from default (1.0) to 0.15 — artist request
-    ceiling: new THREE.MeshStandardMaterial({ map: cofferTex, roughness: 0.98, metalness: 0.0, transparent: true, opacity: 0.15 }),
-    wall   : new THREE.MeshStandardMaterial({ map: wallTex,   roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide }),
-    dado   : new THREE.MeshStandardMaterial({ map: dadoTex,   roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide }),
-    frame  : new THREE.MeshStandardMaterial({ color: 0x0d0d0d, roughness: 0.35, metalness: 0.45 }),
-    molding: new THREE.MeshStandardMaterial({ color: 0xeef0f4, roughness: 0.7  }),
-    dado_rail: new THREE.MeshStandardMaterial({ color: 0xddd8cf, roughness: 0.5, metalness: 0.05 }),
-    skirting: new THREE.MeshStandardMaterial({ color: 0xf0ece4, roughness: 0.6 }),
-    rail   : new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.2, metalness: 0.85 }),
-    light  : new THREE.MeshStandardMaterial({ color: 0xfff8e8, emissive: new THREE.Color(0xfff8e8), emissiveIntensity: 0.9 }),
+    floor  : new THREE.MeshStandardMaterial({ map: marbleTex,     roughness: 0.04, metalness: 0.12, envMapIntensity: 2.0 }),
+    // Ceiling: near-white base, very subtle coffer pattern, soft emissive glow
+    ceiling: new THREE.MeshStandardMaterial({
+      map: cofferTex,
+      roughness: 0.98,
+      metalness: 0.0,
+      emissive: new THREE.Color(0xeeeae4),
+      emissiveIntensity: 0.14,
+    }),
+    // Walls: pure white with subtle emissive so warm lights don't yellow them
+    wall   : new THREE.MeshStandardMaterial({
+      map: wallTex,
+      roughness: 0.90,
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+      emissive: new THREE.Color(0xf8f9fc),
+      emissiveIntensity: 0.10,
+    }),
+    dado      : new THREE.MeshStandardMaterial({ map: dadoTex,       roughness: 0.92, metalness: 0.0, side: THREE.DoubleSide }),
+    darkMarble: new THREE.MeshStandardMaterial({ map: darkMarbleTex, roughness: 0.06, metalness: 0.35, envMapIntensity: 3.0 }),
+    frame     : new THREE.MeshStandardMaterial({ color: 0x0d0d0d,    roughness: 0.35, metalness: 0.45 }),
+    molding   : new THREE.MeshStandardMaterial({ color: 0xeef0f4,    roughness: 0.7  }),
+    dado_rail : new THREE.MeshStandardMaterial({ color: 0xddd8cf,    roughness: 0.5,  metalness: 0.05 }),
+    skirting  : new THREE.MeshStandardMaterial({ color: 0xf0ece4,    roughness: 0.6 }),
+    rail      : new THREE.MeshStandardMaterial({ color: 0x888888,    roughness: 0.2,  metalness: 0.85 }),
+    light     : new THREE.MeshStandardMaterial({ color: 0xfff8e8, emissive: new THREE.Color(0xfff8e8), emissiveIntensity: 0.9 }),
   };
   return matLib;
 }
 
 // ── Wall section builder ──────────────────────────────────────────────────────
 
-const DADO_H    = 1.1;   // dado panel height from floor
-const DADO_RAIL = 0.08;  // rail thickness
-const CROWN_H   = 0.14;  // crown molding height
+const CROWN_H = 0.14;
 
 function buildWallSection(length, mat, withDoor = false) {
   const g = new THREE.Group();
 
   if (!withDoor) {
-    // Single colour wall — full height, no dado, no horizontal line
     const wall = new THREE.Mesh(new THREE.PlaneGeometry(length, WALL_H), mat.wall);
     wall.position.set(0, WALL_H / 2, 0);
     wall.receiveShadow = true;
@@ -232,7 +294,6 @@ function buildWallSection(length, mat, withDoor = false) {
       g.add(top);
     }
 
-    // Door tunnel depth
     const DEPTH = 0.32;
     const leftT = new THREE.Mesh(new THREE.PlaneGeometry(DEPTH, DOOR_H), mat.wall);
     leftT.rotation.y = Math.PI / 2;
@@ -249,7 +310,6 @@ function buildWallSection(length, mat, withDoor = false) {
     topT.position.set(0, DOOR_H, -DEPTH / 2);
     g.add(topT);
 
-    // Door architrave
     const archDefs = [
       { w: 0.055, h: DOOR_H,        x: -(DOOR_W / 2 + 0.028), y: DOOR_H / 2 },
       { w: 0.055, h: DOOR_H,        x:  (DOOR_W / 2 + 0.028), y: DOOR_H / 2 },
@@ -262,7 +322,6 @@ function buildWallSection(length, mat, withDoor = false) {
     }
   }
 
-  // Crown molding only — no dado rail, no skirting
   if (!withDoor) {
     const crown = new THREE.Mesh(new THREE.BoxGeometry(length, CROWN_H, 0.07), mat.molding);
     crown.position.set(0, WALL_H - CROWN_H / 2, 0.035);
@@ -289,57 +348,46 @@ function placeWall(scene, group, px, pz, rotY) {
 }
 
 // ── Museum bench ─────────────────────────────────────────────────────────────
-// Realistic low bench: dark steel legs, warm oak seat, no backrest (museum style)
 
 function buildBench(scene, x, z, rotY = 0) {
   const group = new THREE.Group();
   group.position.set(x, 0, z);
   group.rotation.y = rotY;
 
-  const seatMat = new THREE.MeshStandardMaterial({ color: 0x8b6340, roughness: 0.55, metalness: 0.0  });
-  const legMat  = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3,  metalness: 0.7  });
+  const seatMat = new THREE.MeshStandardMaterial({ color: 0x8b6340, roughness: 0.55, metalness: 0.0 });
+  const legMat  = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.3,  metalness: 0.7 });
+  const BL = 1.6, BW = 0.38, SH = 0.44, ST = 0.06;
 
-  const BL = 1.6;  // bench length
-  const BW = 0.38; // bench width
-  const SH = 0.44; // seat height
-  const ST = 0.06; // seat thickness
-
-  // Seat
   const seat = new THREE.Mesh(new THREE.BoxGeometry(BL, ST, BW), seatMat);
   seat.position.set(0, SH, 0);
   seat.castShadow = true;
   seat.receiveShadow = true;
   group.add(seat);
 
-  // Seat edge bevel strips (top face trim)
   const trimMat = new THREE.MeshStandardMaterial({ color: 0x7a5530, roughness: 0.45 });
-  for (const [tx, tw] of [[-BL/2 + 0.015, 0.03], [BL/2 - 0.015, 0.03]]) {
+  for (const tx of [-BL/2 + 0.015, BL/2 - 0.015]) {
     const trim = new THREE.Mesh(new THREE.BoxGeometry(0.03, ST + 0.004, BW), trimMat);
     trim.position.set(tx, SH, 0);
     group.add(trim);
   }
 
-  // Four legs — rectangular steel profile
   const LW = 0.04, LH = SH - ST / 2, LD = 0.04;
-  const legPositions = [
+  for (const [lx, lz] of [
     [ BL/2 - 0.12,  BW/2 - 0.06],
     [ BL/2 - 0.12, -BW/2 + 0.06],
     [-BL/2 + 0.12,  BW/2 - 0.06],
     [-BL/2 + 0.12, -BW/2 + 0.06],
-  ];
-  for (const [lx, lz] of legPositions) {
+  ]) {
     const leg = new THREE.Mesh(new THREE.BoxGeometry(LW, LH, LD), legMat);
     leg.position.set(lx, LH / 2, lz);
     leg.castShadow = true;
     group.add(leg);
   }
 
-  // Cross stretcher — connects legs for rigidity, looks realistic
-  const stretcherH = 0.1;
   const stretcherL = BL - 0.24;
   for (const sz of [BW/2 - 0.06, -BW/2 + 0.06]) {
     const s = new THREE.Mesh(new THREE.BoxGeometry(stretcherL, 0.025, 0.025), legMat);
-    s.position.set(0, stretcherH, sz);
+    s.position.set(0, 0.1, sz);
     group.add(s);
   }
 
@@ -348,39 +396,35 @@ function buildBench(scene, x, z, rotY = 0) {
 
 // ── Room builder ──────────────────────────────────────────────────────────────
 
-// Each room has a slightly different light warmth for depth
 const ROOM_TONES = [
-  { ambient: 0xfff8f0, fill: 0xfff6e8 }, // Central Hall — warm neutral
-  { ambient: 0xfff2e8, fill: 0xffe8d0 }, // North — slightly warmer
-  { ambient: 0xf8f8ff, fill: 0xf0f4ff }, // East — cooler, bluer
-  { ambient: 0xfff0e0, fill: 0xffe4c0 }, // West — warmest, golden
+  { ambient: 0xfff8f0, fill: 0xfff6e8 },
+  { ambient: 0xfff2e8, fill: 0xffe8d0 },
+  { ambient: 0xf8f8ff, fill: 0xf0f4ff },
+  { ambient: 0xfff0e0, fill: 0xffe4c0 },
 ];
 
 function buildRoom(scene, room, mat) {
   const { cx, cz, w, d, solidWalls, doorWalls } = room;
   const tone = ROOM_TONES[room.id] || ROOM_TONES[0];
 
-  // Floor
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat.floor);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(cx, 0.001, cz);
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Ceiling — coffered
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat.ceiling);
   ceil.rotation.x = Math.PI / 2;
   ceil.position.set(cx, WALL_H, cz);
   scene.add(ceil);
 
-  // Ceiling border trim
   const trimMat = mat.molding;
   const trimH   = 0.06;
   const trims = [
-    { w: w,   d: trimH, x: cx,       z: cz - d/2 + trimH/2 },
-    { w: w,   d: trimH, x: cx,       z: cz + d/2 - trimH/2 },
-    { w: trimH, d: d,   x: cx - w/2 + trimH/2, z: cz       },
-    { w: trimH, d: d,   x: cx + w/2 - trimH/2, z: cz       },
+    { w: w,     d: trimH, x: cx,                 z: cz - d/2 + trimH/2 },
+    { w: w,     d: trimH, x: cx,                 z: cz + d/2 - trimH/2 },
+    { w: trimH, d: d,     x: cx - w/2 + trimH/2, z: cz                 },
+    { w: trimH, d: d,     x: cx + w/2 - trimH/2, z: cz                 },
   ];
   for (const t of trims) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(t.w, 0.04, t.d), trimMat);
@@ -388,11 +432,9 @@ function buildRoom(scene, room, mat) {
     scene.add(mesh);
   }
 
-  // Benches — one in centre of each gallery room, facing paintings
   if (room.id === 0) {
-    // Central Hall — two benches back to back in centre
-    buildBench(scene, cx,     cz, 0);
-    buildBench(scene, cx,     cz, Math.PI);
+    buildBench(scene, cx, cz, 0);
+    buildBench(scene, cx, cz, Math.PI);
   } else if (room.id === 1) {
     buildBench(scene, cx, cz + 3, 0);
   } else if (room.id === 2) {
@@ -402,10 +444,10 @@ function buildRoom(scene, room, mat) {
   }
 
   const wallDefs = {
-    north: [cx,         cz - d/2, 0,           w],
-    south: [cx,         cz + d/2, Math.PI,     w],
-    east:  [cx + w/2,   cz,      -Math.PI/2,   d],
-    west:  [cx - w/2,   cz,       Math.PI/2,   d],
+    north: [cx,       cz - d/2, 0,          w],
+    south: [cx,       cz + d/2, Math.PI,    w],
+    east:  [cx + w/2, cz,      -Math.PI/2,  d],
+    west:  [cx - w/2, cz,       Math.PI/2,  d],
   };
 
   for (const side of solidWalls) {
@@ -417,17 +459,14 @@ function buildRoom(scene, room, mat) {
     placeWall(scene, buildWallSection(len, mat, true), px, pz2, rotY);
   }
 
-  // Ceiling rail
   const railMesh = new THREE.Mesh(new THREE.BoxGeometry(w - 0.6, 0.035, 0.035), mat.rail);
   railMesh.position.set(cx, WALL_H - 0.018, cz);
   scene.add(railMesh);
 
-  // Room fill light — unique tone per room
   const fill = new THREE.PointLight(tone.fill, 0.7, w * 1.4, 1.6);
   fill.position.set(cx, WALL_H - 0.5, cz);
   scene.add(fill);
 
-  // Ceiling spotlights grid
   addCeilingSpots(scene, cx, cz, w, d, mat);
 }
 
@@ -443,7 +482,6 @@ function addCeilingSpots(scene, cx, cz, w, d, mat) {
       const lx = cx - (countX - 1) * spacingX / 2 + xi * spacingX;
       const lz = cz - (countZ - 1) * spacingZ / 2 + zi * spacingZ;
 
-      // Housing
       const housing = new THREE.Mesh(
         new THREE.CylinderGeometry(0.08, 0.065, 0.09, 10),
         mat.rail
@@ -451,7 +489,6 @@ function addCeilingSpots(scene, cx, cz, w, d, mat) {
       housing.position.set(lx, WALL_H - 0.045, lz);
       scene.add(housing);
 
-      // Emissive bulb
       const bulb = new THREE.Mesh(
         new THREE.SphereGeometry(0.04, 8, 8),
         new THREE.MeshStandardMaterial({
@@ -463,7 +500,6 @@ function addCeilingSpots(scene, cx, cz, w, d, mat) {
       bulb.position.set(lx, WALL_H - 0.11, lz);
       scene.add(bulb);
 
-      // Spotlight — pools of light on floor
       const spot = new THREE.SpotLight(0xfff5e0, isMobile ? 1.8 : 2.2, 8, Math.PI / 7, 0.45, 1.5);
       spot.position.set(lx, WALL_H - 0.11, lz);
       const t = new THREE.Object3D();
@@ -474,6 +510,47 @@ function addCeilingSpots(scene, cx, cz, w, d, mat) {
       scene.add(spot);
     }
   }
+}
+
+// ── Info plaque ───────────────────────────────────────────────────────────────
+
+function makeInfoPlaqueTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 52;
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = '#0e0d0b';
+  ctx.fillRect(0, 0, 256, 52);
+
+  ctx.fillStyle = 'rgba(251,208,14,0.4)';
+  ctx.fillRect(0, 0, 256, 1);
+
+  ctx.beginPath();
+  ctx.arc(26, 26, 13, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(251,208,14,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(251,208,14,0.65)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.font = 'bold 17px Georgia, serif';
+  ctx.fillStyle = '#FBD00E';
+  ctx.textAlign = 'center';
+  ctx.fillText('i', 26, 32);
+
+  ctx.font = '13px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.textAlign = 'left';
+  ctx.fillText('View info', 48, 31);
+
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
+}
+
+let _plaqueTex = null;
+function getPlaqueTex() {
+  if (!_plaqueTex) _plaqueTex = makeInfoPlaqueTexture();
+  return _plaqueTex;
 }
 
 // ── Painting builder ──────────────────────────────────────────────────────────
@@ -498,7 +575,6 @@ function buildPainting(scene, painting, mat) {
   group.position.set(...pos);
   group.rotation.y = rotY;
 
-  // Outer frame
   const frameOuter = new THREE.Mesh(
     new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.07), mat.frame
   );
@@ -506,7 +582,6 @@ function buildPainting(scene, painting, mat) {
   frameOuter.receiveShadow = true;
   group.add(frameOuter);
 
-  // Inner frame lip
   const frameInner = new THREE.Mesh(
     new THREE.BoxGeometry(w + 0.04, h + 0.04, 0.09),
     new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6 })
@@ -514,7 +589,6 @@ function buildPainting(scene, painting, mat) {
   frameInner.position.z = -0.01;
   group.add(frameInner);
 
-  // Canvas
   const canvas = new THREE.Mesh(
     new THREE.PlaneGeometry(w, h),
     new THREE.MeshStandardMaterial({ color: painting.color, roughness: 0.85 })
@@ -531,7 +605,6 @@ function buildPainting(scene, painting, mat) {
     tex.magFilter = THREE.LinearFilter;
     canvas.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
 
-    // Auto-resize frame to match real image aspect ratio
     const iw = tex.image.naturalWidth  || tex.image.width  || 0;
     const ih = tex.image.naturalHeight || tex.image.height || 0;
     if (iw > 0 && ih > 0) {
@@ -549,9 +622,17 @@ function buildPainting(scene, painting, mat) {
     }
   }, undefined, () => {});
 
-  // FIX 3: Painting spotlight — wider wash angle, light pulled further back and higher
-  // Was: multiplyScalar(0.5), +1.4 height, Math.PI / 3 angle (60°)
-  // Now: multiplyScalar(0.8), +1.6 height, Math.PI / 2.2 angle (~82°)
+  // Info plaque — clickable sign below each painting
+  const plaqueMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.50, 0.09),
+    new THREE.MeshBasicMaterial({ map: getPlaqueTex(), transparent: true })
+  );
+  plaqueMesh.position.set(0, -(h / 2 + 0.22), 0.06);
+  plaqueMesh.userData.isInfoPlaque = true;
+  plaqueMesh.userData.paintingId   = painting.id;
+  group.add(plaqueMesh);
+
+  // Painting spotlight — wider wash
   const fwd  = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(0, rotY, 0));
   const lPos = new THREE.Vector3(...pos)
     .add(fwd.clone().multiplyScalar(0.8))
@@ -580,17 +661,13 @@ function buildPainting(scene, painting, mat) {
 // ── Global lighting ───────────────────────────────────────────────────────────
 
 function addLighting(scene) {
-  // Very soft global ambient — real light comes from spots
   scene.add(new THREE.AmbientLight(0xfff8f0, 0.28));
-
-  // Hemisphere — warm ceiling bounce, cool floor bounce
   scene.add(new THREE.HemisphereLight(0xfff0e0, 0x3a2810, 0.22));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export function buildMuseum(scene, renderer) {
-  // Store max anisotropy for texture loading
   window._maxAnisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 4;
   const mat = getMaterials();
   scene.background = new THREE.Color(0x0a0a0a);
@@ -599,60 +676,41 @@ export function buildMuseum(scene, renderer) {
   addLighting(scene);
   for (const room of ROOMS) buildRoom(scene, room, mat);
   for (const p of PAINTINGS) buildPainting(scene, p, mat);
-  // FIX 2: pass mat so curatorial plate gets marble texture
   buildCuratorialStatement(scene, mat);
 
   return paintingObjects;
 }
 
-// FIX 2: accept mat parameter — plate now uses marble texture from mat.floor
 function buildCuratorialStatement(scene, mat) {
-  // 3D marble plate on wall with small yellow text
-  // Plate sits flush on the south wall, left of the doorway
-
-  // FIX 2: marble/stone plate — reuses existing marble texture, no extra memory
-  const plateMat = new THREE.MeshStandardMaterial({
-    map: mat.floor.map,
-    color: 0x2a2420,
-    roughness: 0.25,
-    metalness: 0.15,
-  });
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.04), plateMat);
+  // Dark shiny Nero Marquina marble plate
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.04), mat.darkMarble);
   plate.position.set(-5.5, 2.1, 9.86);
   plate.rotation.y = Math.PI;
   scene.add(plate);
 
-  // Thin gold border around plate
   const borderMat = new THREE.MeshStandardMaterial({ color: 0xFBD00E, roughness: 0.3, metalness: 0.6 });
   const border = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.54, 0.02), borderMat);
   border.position.set(-5.5, 2.1, 9.84);
   border.rotation.y = Math.PI;
   scene.add(border);
 
-  // Text canvas — smaller font, fits the plate
   const c = document.createElement('canvas');
   c.width = 512; c.height = 128;
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, 512, 128);
 
-  // Transparent background so marble shows through text area
-  ctx.fillStyle = 'rgba(0,0,0,0)';
-  ctx.fillRect(0, 0, 512, 128);
-
-  // Text — smaller and centered
-  ctx.font = 'bold 30px Questrial, Inter, sans-serif';
+  ctx.font = 'bold 28px Questrial, Inter, sans-serif';
   ctx.fillStyle = '#FBD00E';
   ctx.textAlign = 'center';
   ctx.fillText('Curatorial Statement', 256, 52);
 
-  // Subtitle hint
-  ctx.font = '16px Inter, sans-serif';
+  ctx.font = '15px Inter, sans-serif';
   ctx.fillStyle = 'rgba(251,208,14,0.5)';
   ctx.fillText('Approach to read', 256, 82);
 
-  const tex = new THREE.CanvasTexture(c);
+  const tex     = new THREE.CanvasTexture(c);
   const textMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.44), textMat);
+  const mesh    = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.44), textMat);
   mesh.position.set(-5.5, 2.1, 9.83);
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
@@ -673,7 +731,7 @@ The works resist fixed narratives. Instead, they invite a slower engagement, whe
       description: desc,
       image: '', enquire: '',
     },
-    viewPos: new THREE.Vector3(-5.5, 1.7, 7.5),
+    viewPos:    new THREE.Vector3(-5.5, 1.7, 7.5),
     viewTarget: new THREE.Vector3(-5.5, 2.1, 9.88),
   });
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { buildMuseum }          from './museum.js';
 import { buildCorridor, playIntroAnimation } from './corridor.js';
 import { Player }               from './player.js';
-import { InfoCard, findNearest } from './infoCard.js';
+import { InfoCard }              from './infoCard.js';
 import { AudioManager }         from './audio.js';
 import { Minimap }              from './minimap.js';
 import { ROOM_ZONES, PLAYER_START } from './config.js';
@@ -70,9 +70,8 @@ window.__exitZoom = () => {
   if (btn) btn.classList.remove('show');
 };
 
-// ── Raycaster for click-to-walk and click-on-painting ────────────────────────
+// ── Raycaster ─────────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
-const mouse     = new THREE.Vector2();
 
 function getCanvasXY(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
@@ -89,11 +88,25 @@ function handleClick(clientX, clientY) {
   const m = getCanvasXY(clientX, clientY);
   raycaster.setFromCamera(m, camera);
 
-  // 1. Check painting frames first — click painting opens info card
+  // 1. Check info plaques first — click plaque opens info card
+  const allMeshes = [];
+  scene.traverse((obj) => { if (obj.isMesh) allMeshes.push(obj); });
+  const plaqueHits = raycaster.intersectObjects(allMeshes, false).filter(h => h.object.userData.isInfoPlaque);
+
+  if (plaqueHits.length > 0) {
+    const hit = plaqueHits[0].object;
+    const paintingId = hit.userData.paintingId;
+    const paintingObj = paintingObjects.find(o => o.painting.id === paintingId);
+    if (paintingObj) {
+      infoCard._show(paintingObj);
+    }
+    return;
+  }
+
+  // 2. Check painting frames — click painting also opens info card
   const paintingMeshes = paintingObjects.map(o => o.mesh).filter(m => m.children);
-  const paintingHits = raycaster.intersectObjects(paintingMeshes, true);
+  const paintingHits   = raycaster.intersectObjects(paintingMeshes, true);
   if (paintingHits.length > 0) {
-    // Find which painting was hit
     let hitObj = null;
     for (const p of paintingObjects) {
       if (raycaster.intersectObject(p.mesh, true).length > 0) {
@@ -107,7 +120,7 @@ function handleClick(clientX, clientY) {
     }
   }
 
-  // 2. Check floor — click floor to walk there
+  // 3. Check floor — click floor to walk there
   const floorHits = raycaster.intersectObjects(floorMeshes);
   if (floorHits.length > 0) {
     const hit = floorHits[0].point;
@@ -117,7 +130,7 @@ function handleClick(clientX, clientY) {
   }
 }
 
-// Walk indicator — small circle on floor where you clicked
+// Walk indicator
 function showWalkIndicator(point) {
   let ind = scene.getObjectByName('walkIndicator');
   if (!ind) {
@@ -198,13 +211,11 @@ function enterGallery() {
   lastTime = performance.now();
   minimap.show();
 
-  // Show audio button only on desktop and iOS Safari
   const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const _isIOSSafari = _isIOS && /^((?!chrome|android|crios|fxios|gsa).)*safari/i.test(navigator.userAgent);
   const _isMobile = _isIOS || /Android/.test(navigator.userAgent);
   if (!_isMobile || _isIOSSafari) audioBtn.classList.add('show');
 
-  // Mobile movement hint
   if (isMobile) {
     const hint = document.getElementById('move-hint');
     if (hint) {
@@ -258,8 +269,7 @@ function animate(now) {
 
   if (galleryActive && !player.locked) {
     player.update(dt);
-    const nearest = findNearest(paintingObjects, camera.position);
-    infoCard.update(nearest, dt);
+    // Proximity sensor removed — info card opens via plaque click only
     updateRoomLabel(camera.position.x, camera.position.z);
   }
 
