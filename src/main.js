@@ -44,11 +44,17 @@ camera.position.set(PLAYER_START.x, PLAYER_START.y, PLAYER_START.z);
 camera.lookAt(0, 1.7, 0);
 
 // ── Build world ───────────────────────────────────────────────────────────────
-const loadingFill    = document.getElementById('loading-fill');
+const loadingFill = document.getElementById('loading-fill');
 loadingFill.style.width = '40%';
 const paintingObjects = buildMuseum(scene, renderer);
 buildCorridor(scene);
 loadingFill.style.width = '100%';
+
+// ── GPU warmup — pre-compile all shaders before Enter screen disappears ───────
+// Renders one invisible frame so the GPU has everything compiled.
+// Without this, the first frame after Enter causes a visible freeze.
+renderer.compile(scene, camera);
+renderer.render(scene, camera);
 
 // Collect floor meshes for raycasting
 const floorMeshes = [];
@@ -70,6 +76,22 @@ window.__exitZoom = () => {
   if (btn) btn.classList.remove('show');
 };
 
+// ── Zoom exit — Escape key ────────────────────────────────────────────────────
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && player.isZoomed) {
+    window.__exitZoom();
+  }
+});
+
+// ── Zoom exit — scroll down while zoomed ─────────────────────────────────────
+window.addEventListener('wheel', (e) => {
+  if (!player.isZoomed) return;
+  // Only exit on scroll down (positive deltaY)
+  if (e.deltaY > 0) {
+    window.__exitZoom();
+  }
+}, { passive: true });
+
 // ── Raycaster ─────────────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster();
 
@@ -82,37 +104,47 @@ function getCanvasXY(clientX, clientY) {
 }
 
 function handleClick(clientX, clientY) {
-  if (player.locked || player.isZoomed) return;
+  if (player.locked) return;
   if (player._lastClickWasDrag || player._lastTouchWasSwipe) return;
 
-  const m = getCanvasXY(clientX, clientY);
-  raycaster.setFromCamera(m, camera);
-
-  // 1. Check info plaques first — click plaque opens info card
-  const allMeshes = [];
-  scene.traverse((obj) => { if (obj.isMesh) allMeshes.push(obj); });
-  const plaqueHits = raycaster.intersectObjects(allMeshes, false).filter(h => h.object.userData.isInfoPlaque);
-
-  if (plaqueHits.length > 0) {
-    const hit = plaqueHits[0].object;
-    const paintingId = hit.userData.paintingId;
-    const paintingObj = paintingObjects.find(o => o.painting.id === paintingId);
-    if (paintingObj) {
-      infoCard._show(paintingObj);
+  // ── Zoom exit — click anywhere outside painting while zoomed ─────────────
+  if (player.isZoomed) {
+    const m = getCanvasXY(clientX, clientY);
+    raycaster.setFromCamera(m, camera);
+    const paintingMeshes = paintingObjects.map(o => o.mesh).filter(Boolean);
+    const hits = raycaster.intersectObjects(paintingMeshes, true);
+    // If click didn't land on a painting, exit zoom
+    if (hits.length === 0) {
+      window.__exitZoom();
     }
     return;
   }
 
+  const m = getCanvasXY(clientX, clientY);
+  raycaster.setFromCamera(m, camera);
+
+  // 1. Check info plaques — click plaque opens info card
+  const allMeshes = [];
+  scene.traverse((obj) => { if (obj.isMesh) allMeshes.push(obj); });
+  const plaqueHits = raycaster
+    .intersectObjects(allMeshes, false)
+    .filter(h => h.object.userData.isInfoPlaque);
+
+  if (plaqueHits.length > 0) {
+    const hit        = plaqueHits[0].object;
+    const paintingId = hit.userData.paintingId;
+    const paintingObj = paintingObjects.find(o => o.painting.id === paintingId);
+    if (paintingObj) infoCard._show(paintingObj);
+    return;
+  }
+
   // 2. Check painting frames — click painting also opens info card
-  const paintingMeshes = paintingObjects.map(o => o.mesh).filter(m => m.children);
+  const paintingMeshes = paintingObjects.map(o => o.mesh).filter(Boolean);
   const paintingHits   = raycaster.intersectObjects(paintingMeshes, true);
   if (paintingHits.length > 0) {
     let hitObj = null;
     for (const p of paintingObjects) {
-      if (raycaster.intersectObject(p.mesh, true).length > 0) {
-        hitObj = p;
-        break;
-      }
+      if (raycaster.intersectObject(p.mesh, true).length > 0) { hitObj = p; break; }
     }
     if (hitObj && !hitObj.isCuratorial) {
       infoCard._show(hitObj);
@@ -120,7 +152,7 @@ function handleClick(clientX, clientY) {
     }
   }
 
-  // 3. Check floor — click floor to walk there
+  // 3. Click floor — walk there
   const floorHits = raycaster.intersectObjects(floorMeshes);
   if (floorHits.length > 0) {
     const hit = floorHits[0].point;
@@ -269,7 +301,7 @@ function animate(now) {
 
   if (galleryActive && !player.locked) {
     player.update(dt);
-    // Proximity sensor removed — info card opens via plaque click only
+    // Proximity trigger removed — info card opens via plaque/painting click only
     updateRoomLabel(camera.position.x, camera.position.z);
   }
 
