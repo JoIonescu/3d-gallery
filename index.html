@@ -24,8 +24,6 @@
   <meta name="twitter:description" content="A virtual 3D gallery. Eighteen mixed media works across four rooms." />
   <meta name="twitter:image"       content="/logo.png" />
 
-  <!-- Instagram doesn't read meta tags directly but WhatsApp/Telegram do when sharing the link -->
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Questrial&display=swap" rel="stylesheet">
@@ -123,8 +121,9 @@
       background: var(--accent); opacity: 0.7;
       margin: 0 auto 32px;
     }
+    /* FIX: bio text increased from 14px to 16px */
     .enter-bio {
-      font-size: 14px; font-weight: 300; line-height: 1.95;
+      font-size: 16px; font-weight: 300; line-height: 1.95;
       color: rgba(255,255,255,0.48); margin-bottom: 52px;
     }
     .enter-btn {
@@ -300,7 +299,6 @@
         margin: 0 auto 18px;
       }
       #info-card.visible { transform: translateY(0); }
-
     }
 
     /* ── Zoom hint ── */
@@ -327,13 +325,14 @@
     }
     #toast.show { display: block; }
 
+    /* FIX: small screens — keep proportional reduction, bump base up too */
     @media (max-height: 750px) {
       .enter-logo { width: 72px; height: 72px; margin-bottom: 20px; }
       .enter-eyebrow { margin-bottom: 10px; }
       .enter-name { font-size: 40px; margin-bottom: 4px; }
       .enter-sub { margin-bottom: 18px; }
       .enter-rule { margin-bottom: 18px; }
-      .enter-bio { font-size: 12px; margin-bottom: 32px; }
+      .enter-bio { font-size: 14px; margin-bottom: 32px; }
     }
 
     @media (pointer: coarse) {
@@ -367,7 +366,8 @@
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
+  <!-- FIX: canvas hidden at HTML level — revealed by main.js only when Enter is clicked -->
+  <canvas id="canvas" style="visibility:hidden"></canvas>
 
   <!-- Loading -->
   <div id="loading">
@@ -451,27 +451,20 @@ Drag to look · Click floor to walk · Scroll to move forward
 
   <div id="move-hint">
     <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Up arrow -->
       <path d="M45 14 L38 24 L45 20 L52 24 Z" fill="rgba(255,255,255,0.35)"/>
       <line x1="45" y1="14" x2="45" y2="28" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Down arrow -->
       <path d="M45 76 L38 66 L45 70 L52 66 Z" fill="rgba(255,255,255,0.35)"/>
       <line x1="45" y1="76" x2="45" y2="62" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Left arrow -->
       <path d="M14 45 L24 38 L20 45 L24 52 Z" fill="rgba(255,255,255,0.35)"/>
       <line x1="14" y1="45" x2="28" y2="45" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Right arrow -->
       <path d="M76 45 L66 38 L70 45 L66 52 Z" fill="rgba(255,255,255,0.35)"/>
       <line x1="76" y1="45" x2="62" y2="45" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Centre dot -->
       <circle cx="45" cy="45" r="3" fill="rgba(255,255,255,0.2)"/>
-      <!-- Outer ring -->
       <circle cx="45" cy="45" r="28" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" fill="none"/>
     </svg>
   </div>
 
   <script>
-  // Set real viewport height — fixes iOS Safari address bar overlap
   function setAppHeight() {
     document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
   }
@@ -485,7 +478,6 @@ Drag to look · Click floor to walk · Scroll to move forward
   <script type="module" src="/src/main.js"></script>
 
   <script>
-  // ── Cursor-following particle animation ──────────────────────────────────
   (function() {
     const canvas = document.getElementById('enter-bg-canvas');
     if (!canvas) return;
@@ -506,7 +498,7 @@ Drag to look · Click floor to walk · Scroll to move forward
         particles.push({
           x, y,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 0.6, // slight upward bias = antigravity feel
+          vy: Math.sin(angle) * speed - 0.6,
           r:  1.5 + Math.random() * 3.5,
           alpha: 0.18 + Math.random() * 0.22,
           life: 1.0,
@@ -514,32 +506,24 @@ Drag to look · Click floor to walk · Scroll to move forward
           color: isAccent ? '#FBD00E' : (Math.random() < 0.6 ? '#ffffff' : '#c8a870'),
         });
       }
-      // Trim to max
       if (particles.length > MAX) particles.splice(0, particles.length - MAX);
     }
 
-    // Ambient auto-spawn so there's always something moving
     function ambientSpawn() {
       if (W && H) {
-        spawn(
-          Math.random() * W,
-          H * 0.4 + Math.random() * H * 0.5,
-          1
-        );
+        spawn(Math.random() * W, H * 0.4 + Math.random() * H * 0.5, 1);
       }
     }
 
     function frame() {
       ctx.clearRect(0, 0, W, H);
-
-      // Spawn from cursor position
       if (mouse.x > 0 && mouse.y > 0) spawn(mouse.x, mouse.y, 2);
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x    += p.vx;
         p.y    += p.vy;
-        p.vy   -= 0.015; // antigravity — particles float upward over time
+        p.vy   -= 0.015;
         p.vx   *= 0.99;
         p.life -= p.decay;
         p.r    *= 0.997;
@@ -567,7 +551,6 @@ Drag to look · Click floor to walk · Scroll to move forward
       mouse.y = e.touches[0].clientY;
     }, { passive: true });
 
-    // Ambient spawner every 120ms
     setInterval(ambientSpawn, 120);
 
     const el = document.getElementById('enter');
@@ -583,7 +566,6 @@ Drag to look · Click floor to walk · Scroll to move forward
     }).observe(el, { attributes: true, attributeFilter: ['class'] });
   })();
 
-  // Show @imagohanna in gallery after entering
   document.getElementById('enter-btn').addEventListener('click', () => {
     setTimeout(() => {
       const brand = document.getElementById('gallery-brand');
