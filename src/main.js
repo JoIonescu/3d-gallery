@@ -135,7 +135,8 @@ function handleClick(clientX, clientY) {
   }
 
   // 2. Check painting frames — click painting opens info card
-  const paintingMeshes = paintingObjects.map(o => o.mesh).filter(Boolean);
+  // filter(m => m.children) intentionally excludes the curatorial fake mesh { position: Vector3 }
+  const paintingMeshes = paintingObjects.map(o => o.mesh).filter(m => m && m.children);
   const paintingHits   = raycaster.intersectObjects(paintingMeshes, true);
   if (paintingHits.length > 0) {
     let hitObj = null;
