@@ -765,34 +765,31 @@ function buildCuratorialStatement(scene, mat) {
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, TW, TH);
 
-  // Decorative top rule line
-  const lineY = 52;
-  ctx.strokeStyle = 'rgba(212,168,67,0.6)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, lineY); ctx.lineTo(TW - 80, lineY); ctx.stroke();
+  // Thin gold rule top
+  ctx.strokeStyle = 'rgba(212,168,67,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(100, 58); ctx.lineTo(TW - 100, 58); ctx.stroke();
 
-  // Main title — letter-spaced caps, gold
-  ctx.font = '500 38px Questrial, Georgia, serif';
+  // Main title — title case, gold
+  ctx.font = '400 44px Questrial, Georgia, serif';
   ctx.fillStyle = '#D4A843';
   ctx.textAlign = 'center';
-  ctx.letterSpacing = '0.18em';
-  ctx.fillText('CURATORIAL STATEMENT', TW / 2, 106);
+  ctx.fillText('Curatorial Statement', TW / 2, 116);
 
-  // Thin divider below title
-  ctx.strokeStyle = 'rgba(212,168,67,0.3)';
-  ctx.lineWidth = 0.8;
-  ctx.beginPath(); ctx.moveTo(220, 124); ctx.lineTo(TW - 220, 124); ctx.stroke();
-
-  // Subtitle — italic, lower opacity
-  ctx.font = 'italic 300 22px Georgia, serif';
-  ctx.fillStyle = 'rgba(212,168,67,0.52)';
-  ctx.letterSpacing = '0.08em';
-  ctx.fillText('Touch to read', TW / 2, 162);
-
-  // Decorative bottom rule
-  ctx.strokeStyle = 'rgba(212,168,67,0.6)';
+  // Thin rule below title
+  ctx.strokeStyle = 'rgba(212,168,67,0.28)';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, TH - 52); ctx.lineTo(TW - 80, TH - 52); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(260, 136); ctx.lineTo(TW - 260, 136); ctx.stroke();
+
+  // Subtitle
+  ctx.font = 'italic 300 20px Georgia, serif';
+  ctx.fillStyle = 'rgba(212,168,67,0.48)';
+  ctx.fillText('Click to read', TW / 2, 172);
+
+  // Thin gold rule bottom
+  ctx.strokeStyle = 'rgba(212,168,67,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(100, TH - 56); ctx.lineTo(TW - 100, TH - 56); ctx.stroke();
 
   const tex     = new THREE.CanvasTexture(c);
   const textMat = new THREE.MeshBasicMaterial({

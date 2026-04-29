@@ -117,18 +117,18 @@ function handleClick(clientX, clientY) {
   const m = getCanvasXY(clientX, clientY);
   raycaster.setFromCamera(m, camera);
 
-  // 1. Check info plaques — click plaque opens info card
+  // 1. Check info plaques — only within 4m so distant plaques never block floor clicks
   const plaqueHits = raycaster.intersectObjects(plaqueMeshes, false);
-  if (plaqueHits.length > 0) {
+  if (plaqueHits.length > 0 && plaqueHits[0].distance < 4.0) {
     const paintingId  = plaqueHits[0].object.userData.paintingId;
     const paintingObj = paintingObjects.find(o => o.painting.id === paintingId);
     if (paintingObj) infoCard._show(paintingObj);
     return;
   }
 
-  // 1b. Check curatorial plate — click opens curatorial info card
+  // 1b. Check curatorial plate — only within 5m
   const curatorialHits = raycaster.intersectObjects(curatorialMeshes, false);
-  if (curatorialHits.length > 0) {
+  if (curatorialHits.length > 0 && curatorialHits[0].distance < 5.0) {
     const curatorialObj = paintingObjects.find(o => o.isCuratorial);
     if (curatorialObj) infoCard._show(curatorialObj);
     return;
