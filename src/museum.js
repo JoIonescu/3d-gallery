@@ -72,16 +72,17 @@ function makeMarbleTexture() {
   return tex;
 }
 
-// Dark Marquina-style marble — near-black base, white/gold veins
+// Nero Marquina dark marble — always 512px (hero element), sharp thin veins
 function makeDarkMarbleTexture() {
-  const size = 256;
+  const size = 512;
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
   const ctx = c.getContext('2d');
   const img = ctx.createImageData(size, size);
   const d   = img.data;
 
-  const NW = 64;
+  // Higher-res noise grid for sharper detail
+  const NW = 128;
   const noise = new Float32Array(NW * NW);
   for (let i = 0; i < noise.length; i++) noise[i] = Math.random();
 
@@ -99,39 +100,64 @@ function makeDarkMarbleTexture() {
     return n00*(1-ux)*(1-uy) + n10*ux*(1-uy) + n01*(1-ux)*uy + n11*ux*uy;
   }
 
-  function turbulence(x, y, initialSize) {
-    let val = 0, sz = initialSize;
-    while (sz >= 1) { val += smoothNoise(x / sz, y / sz) * sz; sz /= 2; }
-    return val / initialSize;
+  // Fractional Brownian Motion — multi-octave noise for natural turbulence
+  function fbm(x, y, oct) {
+    let v = 0, a = 0.5, f = 1, mx = 0;
+    for (let i = 0; i < oct; i++) {
+      v += smoothNoise(x * f, y * f) * a;
+      mx += a; a *= 0.5; f *= 2.1;
+    }
+    return v / mx;
   }
-
-  // Near-black base with warm white/gold veins — Nero Marquina style
-  const palette = [
-    [10,  8,  6],
-    [18, 14, 10],
-    [32, 26, 18],
-    [70, 58, 40],
-    [140, 120, 85],
-    [195, 178, 140],
-  ];
-
-  const xPeriod = 6.0, yPeriod = 10.0, turbPow = 5.5, turbSz = size / 4;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const turb    = turbulence(x, y, turbSz);
-      const xyVal   = (x * xPeriod / size) + (y * yPeriod / size) + turbPow * turb;
-      const sineVal = Math.abs(Math.sin(xyVal * Math.PI));
-      const t   = sineVal;
-      const idx = Math.floor(t * (palette.length - 1));
-      const f   = t * (palette.length - 1) - idx;
-      const c0  = palette[Math.min(idx,     palette.length-1)];
-      const c1  = palette[Math.min(idx + 1, palette.length-1)];
-      const r = Math.round(c0[0] * (1-f) + c1[0] * f);
-      const g = Math.round(c0[1] * (1-f) + c1[1] * f);
-      const b = Math.round(c0[2] * (1-f) + c1[2] * f);
+      const nx = x / size;
+      const ny = y / size;
+
+      // Multi-scale turbulence distortion
+      const turb = fbm(nx * 3.2, ny * 3.2, 7);
+
+      // Primary veins — diagonal, thin white
+      const v1 = Math.abs(Math.sin((nx * 5.5 + ny * 9.0 + turb * 7.0) * Math.PI));
+      // Secondary veins — cross-diagonal, gold tint
+      const v2 = Math.abs(Math.sin((nx * 2.8 - ny * 4.5 + turb * 4.5) * Math.PI));
+      // Tertiary — micro cracks, very faint
+      const v3 = Math.abs(Math.sin((nx * 11  + ny * 6.0 + turb * 3.0) * Math.PI));
+
+      // Math.pow with high exponent = very narrow sharp veins
+      const vein1 = Math.pow(1.0 - v1, 22); // sharp white veins
+      const vein2 = Math.pow(1.0 - v2, 32); // sharper gold veins
+      const vein3 = Math.pow(1.0 - v3, 40); // micro cracks, faint
+
+      // Subtle base variation — not pure black, slight depth
+      const baseMicro = fbm(nx * 6, ny * 6, 4) * 0.06;
+
+      // Base: near-black, very slight warm undertone
+      let r = 7  + baseMicro * 14;
+      let g = 5  + baseMicro * 9;
+      let b = 4  + baseMicro * 7;
+
+      // White/cream veins (primary)
+      r += vein1 * 235;
+      g += vein1 * 228;
+      b += vein1 * 218;
+
+      // Warm gold veins (secondary)
+      r += vein2 * 200;
+      g += vein2 * 152;
+      b += vein2 * 40;
+
+      // Hairline micro cracks (tertiary) — cool white
+      r += vein3 * 140;
+      g += vein3 * 138;
+      b += vein3 * 135;
+
       const i = (y * size + x) * 4;
-      d[i] = r; d[i+1] = g; d[i+2] = b; d[i+3] = 255;
+      d[i]   = Math.min(255, Math.round(r));
+      d[i+1] = Math.min(255, Math.round(g));
+      d[i+2] = Math.min(255, Math.round(b));
+      d[i+3] = 255;
     }
   }
 
@@ -682,39 +708,113 @@ export function buildMuseum(scene, renderer) {
 }
 
 function buildCuratorialStatement(scene, mat) {
-  // Dark shiny Nero Marquina marble plate
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.04), mat.darkMarble);
-  plate.position.set(-5.5, 2.1, 9.86);
+  // ── Plate geometry ───────────────────────────────────────────────────────
+  // Larger, thicker box — reads as a real mounted gallery plaque
+  const PW = 2.2, PH = 0.68, PD = 0.055;
+  const px = -5.5, py = 2.1, pz = 9.86;
+
+  // Marble plate — Nero Marquina material, near-mirror polish
+  const plate = new THREE.Mesh(
+    new THREE.BoxGeometry(PW, PH, PD),
+    mat.darkMarble
+  );
+  plate.position.set(px, py, pz);
   plate.rotation.y = Math.PI;
+  plate.userData.isCuratorialPlate = true; // click target
   scene.add(plate);
 
-  const borderMat = new THREE.MeshStandardMaterial({ color: 0xFBD00E, roughness: 0.3, metalness: 0.6 });
-  const border = new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.54, 0.02), borderMat);
-  border.position.set(-5.5, 2.1, 9.84);
-  border.rotation.y = Math.PI;
-  scene.add(border);
+  // ── Gold border — 4 separate thin strips, like a real frame ──────────────
+  const borderMat = new THREE.MeshStandardMaterial({
+    color: 0xD4A843, roughness: 0.12, metalness: 0.92,
+  });
+  const bT = 0.018; // border thickness
+  const bD = PD + 0.004; // slightly proud of plate face
+  const borders = [
+    // top
+    { w: PW + bT * 2, h: bT, x: px, y: py + PH / 2 + bT / 2 },
+    // bottom
+    { w: PW + bT * 2, h: bT, x: px, y: py - PH / 2 - bT / 2 },
+    // left
+    { w: bT, h: PH, x: px - PW / 2 - bT / 2, y: py },
+    // right
+    { w: bT, h: PH, x: px + PW / 2 + bT / 2, y: py },
+  ];
+  for (const b of borders) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, bD), borderMat);
+    m.position.set(b.x, b.y, pz - 0.002);
+    m.rotation.y = Math.PI;
+    scene.add(m);
+  }
 
+  // ── Inner inset — slight recess shadow effect ─────────────────────────────
+  const insetMat = new THREE.MeshStandardMaterial({
+    color: 0x020100, roughness: 0.8, metalness: 0.0,
+  });
+  const inset = new THREE.Mesh(
+    new THREE.BoxGeometry(PW - 0.06, PH - 0.06, 0.003),
+    insetMat
+  );
+  inset.position.set(px, py, pz - PD / 2 - 0.001);
+  inset.rotation.y = Math.PI;
+  scene.add(inset);
+
+  // ── Text canvas — 1024×256 for crisp rendering ────────────────────────────
+  const TW = 1024, TH = 256;
   const c = document.createElement('canvas');
-  c.width = 512; c.height = 128;
+  c.width = TW; c.height = TH;
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 512, 128);
+  ctx.clearRect(0, 0, TW, TH);
 
-  ctx.font = 'bold 28px Questrial, Inter, sans-serif';
-  ctx.fillStyle = '#FBD00E';
+  // Decorative top rule line
+  const lineY = 52;
+  ctx.strokeStyle = 'rgba(212,168,67,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, lineY); ctx.lineTo(TW - 80, lineY); ctx.stroke();
+
+  // Main title — letter-spaced caps, gold
+  ctx.font = '500 38px Questrial, Georgia, serif';
+  ctx.fillStyle = '#D4A843';
   ctx.textAlign = 'center';
-  ctx.fillText('Curatorial Statement', 256, 52);
+  ctx.letterSpacing = '0.18em';
+  ctx.fillText('CURATORIAL STATEMENT', TW / 2, 106);
 
-  ctx.font = '15px Inter, sans-serif';
-  ctx.fillStyle = 'rgba(251,208,14,0.5)';
-  ctx.fillText('Approach to read', 256, 82);
+  // Thin divider below title
+  ctx.strokeStyle = 'rgba(212,168,67,0.3)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(220, 124); ctx.lineTo(TW - 220, 124); ctx.stroke();
+
+  // Subtitle — italic, lower opacity
+  ctx.font = 'italic 300 22px Georgia, serif';
+  ctx.fillStyle = 'rgba(212,168,67,0.52)';
+  ctx.letterSpacing = '0.08em';
+  ctx.fillText('Touch to read', TW / 2, 162);
+
+  // Decorative bottom rule
+  ctx.strokeStyle = 'rgba(212,168,67,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, TH - 52); ctx.lineTo(TW - 80, TH - 52); ctx.stroke();
 
   const tex     = new THREE.CanvasTexture(c);
-  const textMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide });
-  const mesh    = new THREE.Mesh(new THREE.PlaneGeometry(1.76, 0.44), textMat);
-  mesh.position.set(-5.5, 2.1, 9.83);
-  mesh.rotation.y = Math.PI;
-  scene.add(mesh);
+  const textMat = new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, side: THREE.FrontSide,
+  });
+  const textMesh = new THREE.Mesh(new THREE.PlaneGeometry(PW - 0.08, PH - 0.06), textMat);
+  textMesh.position.set(px, py, pz - PD / 2 - 0.002);
+  textMesh.rotation.y = Math.PI;
+  textMesh.userData.isCuratorialPlate = true; // click target
+  scene.add(textMesh);
 
+  // ── Dedicated spot light — creates the characteristic shiny highlight ─────
+  // Positioned above and slightly in front, angled down to catch the specular
+  const plateSpot = new THREE.SpotLight(0xfff5e0, isMobile ? 3.5 : 5.0, 4.5, Math.PI / 10, 0.3, 1.4);
+  plateSpot.position.set(px, py + 1.8, pz - 1.0);
+  const plateTarget = new THREE.Object3D();
+  plateTarget.position.set(px, py, pz);
+  scene.add(plateTarget);
+  plateSpot.target = plateTarget;
+  scene.add(plateSpot);
+
+  // ── Curatorial content ────────────────────────────────────────────────────
   const desc = `This body of work unfolds as a vivid exploration of inner landscapes, where identity, emotion, and perception take on organic and symbolic form. Moving fluidly across mixed media, collage, printmaking, and drawing, the artist constructs a visual language rooted in layering, intuition, and play.
 
 Recurring motifs: eyes, botanical forms, fragmented bodies, and hybrid figures, act as anchors within a shifting terrain. They suggest awareness, growth, and transformation, while also questioning how identity is formed, observed, and expressed. Figures appear both grounded and dissolving, caught between visibility and introspection, control and spontaneity.
@@ -722,7 +822,7 @@ Recurring motifs: eyes, botanical forms, fragmented bodies, and hybrid figures, 
 The works resist fixed narratives. Instead, they invite a slower engagement, where meaning emerges through texture, color, and association. Bright, almost electric palettes contrast with moments of quiet tension, creating a dynamic balance between the playful and the reflective.`;
 
   paintingObjects.push({
-    mesh: { position: new THREE.Vector3(-5.5, 2.1, 9.88) },
+    mesh: { position: new THREE.Vector3(px, py, pz) },
     isCuratorial: true,
     painting: {
       id: 999,
@@ -731,7 +831,7 @@ The works resist fixed narratives. Instead, they invite a slower engagement, whe
       description: desc,
       image: '', enquire: '',
     },
-    viewPos:    new THREE.Vector3(-5.5, 1.7, 7.5),
-    viewTarget: new THREE.Vector3(-5.5, 2.1, 9.88),
+    viewPos:    new THREE.Vector3(px, 1.7, 7.5),
+    viewTarget: new THREE.Vector3(px, py, pz),
   });
 }
